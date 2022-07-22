@@ -36,15 +36,13 @@ int mqtt_port = 0;
 String mqtt_user = "";
 String mqtt_pass = "";
 String node_name = "";
-String command = "";
 std::vector<String> macs;
 
 // Main fields
 static const int scanTime = singleScanTime;
 static const int waitTime = scanInterval;
 String availabilityTopic;
-String setTopic;
-String telemetryTopic;
+String stateTopic;
 
 AsyncMqttClient mqttClient;
 TimerHandle_t mqttReconnectTimer;
@@ -173,17 +171,8 @@ void WiFiEvent(WiFiEvent_t event) {
 }
 
 bool sendTelemetry() {
-	StaticJsonDocument<256> tele;
-	tele["ip"] = localIp;
-	tele["config"] = command;
-	//tele["hostname"] = WiFi.getHostname();
-	//tele["scan_dur"] = scanTime;
-	//tele["wait_dur"] = waitTime;
-	char teleMessageBuffer[258];
-	serializeJson(tele, teleMessageBuffer);
-
-	if (mqttClient.publish(telemetryTopic.c_str(), 0, 0, teleMessageBuffer) == true) {
-		Serial.println("Telemetry sent");
+	if (mqttClient.publish(stateTopic.c_str(), 0, 0, localIp.c_str()) == true) {
+		Serial.println("State sent");
 		return true;
 	} else {
 		Serial.println("Error sending telemetry");
@@ -192,15 +181,15 @@ bool sendTelemetry() {
 	}
 }
 
-void sendDeviceState(String device, const char* state, int rssi) {
+void sendDeviceState(String device, int rssi) {
 	if (mqttClient.connected()) {
-		String normalized = device + "/";
-	    normalized.replace(':', '_');
-		String t_topic = esp_ble_presence_topic + normalized + tracker_topic + state_topic;
-		String r_topic = esp_ble_presence_topic + normalized + node_name + rssi_topic + state_topic;
-		if (mqttClient.publish(t_topic.c_str(), 0, 0, state) == true 
-		 && mqttClient.publish(r_topic.c_str(), 0, 0, String(rssi).c_str()) == true) {
-			Serial.println("Device data sent.");
+		String topic = root_topic + device + "/" + node_name;
+		StaticJsonDocument<512> pld;
+		pld["rssi"] = rssi;
+		char pld_buffer[128];
+		serializeJson(pld, pld_buffer);
+		if (mqttClient.publish(topic.c_str(), 0, true, pld_buffer) == true) {
+			Serial.println("Sent data for " + device);
 		} else {
 			Serial.print("Error sending device data message.");
 			mqttClient.disconnect();
@@ -223,7 +212,7 @@ void reportDevice(NimBLEAdvertisedDevice advertisedDevice) {
 	if (std::find(macs.begin(), macs.end(), mac_address) == macs.end()) {
 		return;
 	}
-	sendDeviceState(mac_address, payload_home_value, advertisedDevice.getRSSI());
+	sendDeviceState(mac_address, advertisedDevice.getRSSI());
 }
 
 void scanForDevices(void * parameter) {
@@ -256,67 +245,33 @@ class BleAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     }
 };
 
-void sendHaConfig(String device) {
-	String normalized = device + "/";
-	normalized.replace(':', '_');
-	String unique = "esp_ble_tracker_" + normalized.substring(0, normalized.length() - 1);
+void sendHaConfig() {
+	String prefix = "format_ble_tracker_rooms";
 
 	StaticJsonDocument<256> device_info;
-	device_info[name_param] = device;
+	device_info["name"] = "Format BLE Tracker - " + node_name;
+	device_info["configuration_url"] = "http://" + localIp;
     StaticJsonDocument<128> idDoc;
     JsonArray idArray = idDoc.to<JsonArray>();
-    idArray.add(unique);
-	device_info[identifiers_param] = idArray;
+    idArray.add(prefix + "_" + node_name);
+	device_info["identifiers"] = idArray;
 
 	StaticJsonDocument<512> tracker_conf;
-	tracker_conf[device_param] = device_info;
-	tracker_conf[state_topic_param] = esp_ble_presence_topic + normalized + tracker_topic + state_topic;
-	tracker_conf[name_param] = device + " tracker";
-	tracker_conf[payload_home_param] = payload_home_value;
-	tracker_conf[payload_not_home_param] = payload_not_home_value;
-	tracker_conf[source_type_param] = source_type_value;
-	tracker_conf[unique_id_param] = unique + "_tracker";
+	tracker_conf["device"] = device_info;
+	tracker_conf["state_topic"] = stateTopic;
+	tracker_conf["availability_topic"] = availabilityTopic;
+	tracker_conf["name"] = node_name + " IP address";
+	tracker_conf["unique_id"] = prefix + "_" + node_name + "_ip";
 	char tracker_buffer[512];
 	serializeJson(tracker_conf, tracker_buffer);
 
-	StaticJsonDocument<512> rssi_conf;
-	rssi_conf[device_param] = device_info;
-	rssi_conf[state_topic_param] = esp_ble_presence_topic + normalized + node_name + rssi_topic + state_topic;
-	rssi_conf[name_param] = device + " " + node_name + " RSSI";
-	rssi_conf[unique_id_param] = unique + "_rssi_" + node_name;
-	rssi_conf["state_class"] = "measurement";
-	rssi_conf["unit_of_measurement"] = "dBm";
-	rssi_conf["icon"] = "mdi:signal";
-	char rssi_buffer[512];
-	serializeJson(rssi_conf, rssi_buffer);
-
 	if (
-		mqttClient.publish((discovery_prefix + device_tracker_topic + normalized + tracker_topic + config_topic).c_str(), 0, true, tracker_buffer) == true
-		&& mqttClient.publish((discovery_prefix + sensor_topic + normalized + node_name + rssi_topic + config_topic).c_str(), 0, true, rssi_buffer) == true) {
-		Serial.println("Config sent for " + device);
+		mqttClient.publish((discovery_prefix + sensor_topic  + prefix + "/" + node_name + "/" + config_topic).c_str(), 0, true, tracker_buffer) == true) {
+		Serial.println("Config sent for " + node_name);
 	} else {
 		Serial.println("Error sending HA config");
 		mqttClient.disconnect();
 	}
-}
-
-void readCommand() {
-	preferences.begin(main_prefs, true);
-	command = preferences.getString(macs_pref);
-	preferences.end();
-	DynamicJsonDocument doc(1024);
-	deserializeJson(doc, command);
-	JsonObject obj = doc.as<JsonObject>();
-	JsonArray j_macs = obj["devices"];
-	macs = std::vector<String>();
-	for (JsonVariant v : j_macs) {
-		String s = v.as<String>();
-		if (s != "1") {
-			s.toUpperCase();
-        	macs.push_back(s);
-			sendHaConfig(s);
-		}
-    }
 }
 
 void onMqttConnect(bool sessionPresent) {
@@ -324,31 +279,36 @@ void onMqttConnect(bool sessionPresent) {
 	digitalWrite(LED_BUILTIN, !LED_ON);
 	mqttRetryAttempts = 0;
 	
-	if (mqttClient.publish(availabilityTopic.c_str(), 0, 1, "CONNECTED") == true) {
+	if (mqttClient.publish(availabilityTopic.c_str(), 0, 1, "online") == true) {
 		Serial.print("Success sending message to topic:\t");
 		Serial.println(availabilityTopic);
-		mqttClient.subscribe(setTopic.c_str(), 2);
+		String alive_topic = root_topic + "alive/+";
+		mqttClient.subscribe(alive_topic.c_str(), 2);
+		sendHaConfig();
 		sendTelemetry();
-		readCommand();
 	} else {
 		Serial.println("Error sending message");
 		mqttClient.disconnect();
 	}
 }
 
-void saveCommand(String pld) {
-	preferences.begin(main_prefs, false);
-	preferences.putString(macs_pref, pld);
-	preferences.end();
-}
-
 void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-	Serial.println("MQTT command:");
-	char pldArr[1024];
-	strcpy(pldArr, payload);
-	Serial.println(pldArr);
-	saveCommand(pldArr);
-	readCommand();
+	char topicArr[256];
+	strcpy(topicArr, topic);
+	String tStr = topicArr;
+	String mac = tStr.substring(tStr.lastIndexOf("/") + 1);
+	if (payload) {
+		char pldArr[32];
+		strcpy(pldArr, payload);
+		String pld = pldArr;
+		if (pld.indexOf("True") >= 0) {
+			Serial.println("Adding " + mac);
+			macs.push_back(mac);
+			return;
+		}
+	}
+	Serial.println("Removing " + mac);
+	macs.erase(std::remove(macs.begin(), macs.end(), mac), macs.end());
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -373,11 +333,8 @@ String processor(const String& var) {
 	if (var == "MQTT_USER") {
 		return mqtt_user;
 	}
-	if (var == "MQTT_TOPIC") {
-		return esp_ble_presence_topic + node_name;
-	}
-	if (var == "MACS") {
-		return command;
+	if (var == "ROOM_NAME") {
+		return node_name;
 	}
 	return String();
 }
@@ -400,7 +357,7 @@ void mainSetup() {
 	mqttClient.onMessage(onMqttMessage);
 
 	mqttClient.setServer(mqtt_ip.c_str(), mqtt_port);
-	mqttClient.setWill(availabilityTopic.c_str(), 0, 1, "DISCONNECTED");
+	mqttClient.setWill(availabilityTopic.c_str(), 0, 1, "offline");
 	mqttClient.setKeepAlive(60);
 
 	connectToWifi();
@@ -487,9 +444,8 @@ bool readPrefs() {
 	node_name = preferences.getString(node_name_pref);
 	preferences.end();
 
-	availabilityTopic = esp_ble_presence_topic + node_name + "/availability";
-	setTopic = esp_ble_presence_topic + node_name + "/set";
-	telemetryTopic = esp_ble_presence_topic + node_name + "/tele";
+	availabilityTopic = root_topic + tracker_topic + node_name + "/availability";
+	stateTopic = root_topic + tracker_topic + node_name + "/state";
 
 	return wifi_ssid != "" 
 		&& mqtt_ip != "" 

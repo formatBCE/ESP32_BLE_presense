@@ -1,5 +1,5 @@
 
-#define version "1.0.0"
+#define version "0.0.1"
 #define ap_ssid "EspBleScanner"
 
 #define main_prefs "ble_scan_prefs"
@@ -11,25 +11,18 @@
 #define mqtt_user_pref "mqtt_user"
 #define mqtt_pass_pref "mqtt_pass"
 #define node_name_pref "node_name"
-#define macs_pref "devices"
 
-String esp_ble_presence_topic = "esp_ble_presence/";
+String root_topic = "format_ble_tracker/";
 #define discovery_prefix "homeassistant/"
-String device_tracker_topic = "device_tracker/";
 String sensor_topic  = "sensor/";
 #define state_topic "state"
 #define availability_topic "availability"
 #define config_topic "config"
-#define tracker_topic "tracker/"
-#define rssi_topic "_rssi/"
+#define tracker_topic "trackers/"
 #define device_param "device"
 #define identifiers_param "identifiers"
 #define state_topic_param "state_topic"
 #define name_param "name"
-#define payload_home_param "payload_home"
-#define payload_home_value "home"
-#define payload_not_home_param "payload_not_home"
-#define payload_not_home_value "not_home"
 #define source_type_param "source_type"
 #define source_type_value "bluetooth_le"
 #define unique_id_param "unique_id"
@@ -48,7 +41,7 @@ String sensor_topic  = "sensor/";
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
-<title>ESP BLE scanner %VERSION%</title>
+<title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style> 
 input[type=submit] {
@@ -62,7 +55,7 @@ input[type=submit] {
 }
 </style>
 </head><body>
-<h1 style="color: #5e9ca0;">ESP BLE scanner %VERSION%</h1>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
 <form action="/update">
 <p><input type="submit" value="Update firmware" /></p>
@@ -89,7 +82,7 @@ input[type=submit] {
 </body></html>)rawliteral";
 const char reset_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
-<title>ESP BLE scanner %VERSION%</title>
+<title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style> 
 input[type=submit] {
@@ -103,19 +96,18 @@ input[type=submit] {
 }
 </style>
 </head><body>
-<h1 style="color: #5e9ca0;">ESP BLE scanner %VERSION%</h1>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
 <form action="/update">
 <p><input type="submit" value="Update firmware" /></p>
 </form>
 <h4>&nbsp;</h4>
 <h4>CURRENT CONFIGURATION</h4>
+<p>Room name: %ROOM_NAME%</p>
 <p>WiFi SSID: %WIFI%</p>
 <p>MQTT IP: %MQTT_IP%</p>
 <p>MQTT port: %MQTT_PORT%</p>
 <p>MQTT user: %MQTT_USER%</p>
-<p>Node name (MQTT topic): %MQTT_TOPIC%</p>
-<p>Configuration: %MACS%</p>
 <h4>&nbsp;</h4>
 <h4>RESET CONFIGURATION</h4>
 <p>You may reset device configuration on this page.</p>
@@ -126,10 +118,10 @@ input[type=submit] {
 </body></html>)rawliteral";
 const char confirm_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
-<title>ESP BLE scanner %VERSION%</title>
+<title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head><body>
-<h1 style="color: #5e9ca0;">ESP BLE scanner %VERSION%</h1>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
 <p>Configuration saved, device restarted. You may close this page now.</p>
 </body></html>)rawliteral";
