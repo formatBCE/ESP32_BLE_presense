@@ -10,7 +10,7 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 # Usage
 
 1. Get the code from repository, and flash it to ESP32 using PlatformIO or other IDE.
-Or, download only firmware.bin file, and flash using ESP flasher or other flashing tool.
+Or, download only firmware.bin file from latest release, and flash using ESP flasher or other flashing tool.
 Use [this file](https://github.com/formatBCE/ESP32_BLE_presense/blob/main/partitions_singleapp.csv) for partitioning reference.
 
 2. Place chip in preferred location and power it up. Make sure you use good power adapter!
