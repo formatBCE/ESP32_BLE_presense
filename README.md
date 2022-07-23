@@ -1,2 +1,2 @@
 # ESP32_BLE_presense
-Firmware for ESP32 Home Assistant BLE presence integration.
+ESP32 firmware for Home Assistant Format BLE Tracker integration https://github.com/formatBCE/Format-BLE-Tracker.
