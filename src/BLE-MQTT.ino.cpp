@@ -37,6 +37,7 @@ String mqtt_user = "";
 String mqtt_pass = "";
 String node_name = "";
 std::vector<String> macs;
+std::vector<String> uuids;
 
 // Main fields
 static const int scanTime = singleScanTime;
@@ -166,7 +167,6 @@ void WiFiEvent(WiFiEvent_t event) {
 		Serial.println("STA Stop");
 		handleWifiDisconnect();
 		break;
-
     }
 }
 
@@ -206,16 +206,27 @@ void sendDeviceState(String device, int rssi) {
 	}
 }
 
-void reportDevice(NimBLEAdvertisedDevice advertisedDevice) {
+void reportDevice(NimBLEAdvertisedDevice& advertisedDevice) {
 	String mac_address = advertisedDevice.getAddress().toString().c_str();
 	mac_address.toUpperCase();
-	if (std::find(macs.begin(), macs.end(), mac_address) == macs.end()) {
+	if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
+		sendDeviceState(mac_address, advertisedDevice.getRSSI());
 		return;
 	}
-	sendDeviceState(mac_address, advertisedDevice.getRSSI());
+	std::string strManufacturerData = advertisedDevice.getManufacturerData();
+	if (strManufacturerData != "") {
+		uint8_t cManufacturerData[100];
+		strManufacturerData.copy((char*)cManufacturerData, strManufacturerData.length(), 0);
+		String uuid_str = NimBLEUUID(cManufacturerData+4, 16, true).toString().c_str();
+		uuid_str.toUpperCase();
+		if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
+			sendDeviceState(uuid_str, advertisedDevice.getRSSI());
+			return;
+		}
+	}
 }
 
-void scanForDevices(void * parameter) {
+void scanForDevices(void* parameter) {
 	while (1) {
 		if (WiFi.isConnected() && (millis() - last > (waitTime * 1000) || last == 0)) {
 			Serial.println("Scanning...\t");
@@ -296,19 +307,24 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 	char topicArr[256];
 	strcpy(topicArr, topic);
 	String tStr = topicArr;
-	String mac = tStr.substring(tStr.lastIndexOf("/") + 1);
+	String uid = tStr.substring(tStr.lastIndexOf("/") + 1);
 	if (payload) {
 		char pldArr[32];
 		strcpy(pldArr, payload);
 		String pld = pldArr;
 		if (pld.indexOf("True") >= 0) {
-			Serial.println("Adding " + mac);
-			macs.push_back(mac);
+			Serial.println("Adding " + uid);
+			if (uid.indexOf(":") >= 0) {
+				macs.push_back(uid);
+			} else if (uid.indexOf("-") >= 0) {
+				uuids.push_back(uid);
+			}
 			return;
 		}
 	}
-	Serial.println("Removing " + mac);
-	macs.erase(std::remove(macs.begin(), macs.end(), mac), macs.end());
+	Serial.println("Removing " + uid);
+	macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
+	uuids.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -339,7 +355,7 @@ String processor(const String& var) {
 	return String();
 }
 
-void notFound(AsyncWebServerRequest *request) {
+void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
@@ -376,10 +392,10 @@ void mainSetup() {
 		1,
 		&NimBLEScan,
 		1);
-	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
 		request->send_P(200, "text/html", reset_html, processor);
 	});
-	server.on("/reset", HTTP_GET, [] (AsyncWebServerRequest *request) {
+	server.on("/reset", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		preferences.begin(main_prefs, false);
 		preferences.clear();
 		preferences.end();
@@ -403,12 +419,12 @@ void configSetup() {
   	Serial.print("AP IP address: ");
   	Serial.println(IP);
   	// Send web page with input fields to client
-	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request){
 		request->send_P(200, "text/html", index_html, processor);
 	});
 
 	// Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-	server.on("/config", HTTP_GET, [] (AsyncWebServerRequest *request) {
+	server.on("/config", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
 		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
 		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
@@ -453,11 +469,11 @@ bool readPrefs() {
 		&& node_name != "";
 }
 
-void handleUpdate(AsyncWebServerRequest *request) {
+void handleUpdate(AsyncWebServerRequest* request) {
   request->send(200, "text/html", update_html);
 }
 
-void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
+void handleDoUpdate(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
 	if (!index){
 		Serial.println("Update");
 		content_len = request->contentLength();
@@ -486,10 +502,10 @@ void printProgress(size_t prg, size_t sz) {
 }
 
 void commonSetup() {
-	server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){handleUpdate(request);});
+	server.on("/update", HTTP_GET, [](AsyncWebServerRequest* request){handleUpdate(request);});
 	server.on("/doUpdate", HTTP_POST,
-		[](AsyncWebServerRequest *request) {},
-		[](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data,
+		[](AsyncWebServerRequest* request) {},
+		[](AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data,
 					size_t len, bool final) {
 							handleDoUpdate(request, filename, index, data, len, final);
 						}
