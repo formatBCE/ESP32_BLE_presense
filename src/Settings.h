@@ -1,5 +1,5 @@
 
-#define version "0.0.1"
+#define version "0.0.2"
 #define ap_ssid "EspBleScanner"
 
 #define main_prefs "ble_scan_prefs"

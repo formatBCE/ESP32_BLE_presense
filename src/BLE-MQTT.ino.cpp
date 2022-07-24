@@ -262,6 +262,7 @@ void sendHaConfig() {
 	StaticJsonDocument<256> device_info;
 	device_info["name"] = "Format BLE Tracker - " + node_name;
 	device_info["configuration_url"] = "http://" + localIp;
+	device_info["sw_version"] = String(version);
     StaticJsonDocument<128> idDoc;
     JsonArray idArray = idDoc.to<JsonArray>();
     idArray.add(prefix + "_" + node_name);
