@@ -23,6 +23,6 @@ Make sure you did type everything correctly before saving configuration.
 Use 2.4 GHz WiFi network.
 
 5. After saving configuration, ESP32 will restart, connect to WiFi and start scanning and sending data to MQTT. By default, there will be no tag data on MQTT server, if you didn't install Home Assistant integration https://github.com/formatBCE/Format-BLE-Tracker yet.
-6. In Home Assistant you will be able to find new device with node current IP sensor. Use it to examine node preferences, reset config or update firmware OTA.
+6. In Home Assistant you will be able to find new device with node current IP sensor, and current software version. Use it to examine node preferences, reset config or update firmware OTA.
 
 
