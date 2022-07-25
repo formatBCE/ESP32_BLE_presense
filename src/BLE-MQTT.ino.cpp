@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <WiFi.h>
+#include "time.h"
 extern "C" {
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/timers.h"
@@ -136,6 +137,7 @@ void WiFiEvent(WiFiEvent_t event) {
 		localIp = WiFi.localIP().toString().c_str();
 		Serial.print("Hostname: \t");
 		Serial.println(WiFi.getHostname());
+		configTime(0, 0, ntp_server);
 		connectToMqtt();
 		if (xTimerIsTimerActive(wifiReconnectTimer) != pdFALSE) {
 			Serial.println("Stopping wifi reconnect timer");
@@ -171,7 +173,7 @@ void WiFiEvent(WiFiEvent_t event) {
 }
 
 bool sendTelemetry() {
-	if (mqttClient.publish(stateTopic.c_str(), 0, 0, localIp.c_str()) == true) {
+	if (mqttClient.publish(stateTopic.c_str(), 0, false, localIp.c_str()) == true) {
 		Serial.println("State sent");
 		return true;
 	} else {
@@ -181,14 +183,25 @@ bool sendTelemetry() {
 	}
 }
 
+unsigned long getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    return(0);
+  }
+  time(&now);
+  return now;
+}
+
 void sendDeviceState(String device, int rssi) {
 	if (mqttClient.connected()) {
 		String topic = root_topic + device + "/" + node_name;
 		StaticJsonDocument<512> pld;
 		pld["rssi"] = rssi;
+		pld["timestamp"] = getTime();
 		char pld_buffer[128];
 		serializeJson(pld, pld_buffer);
-		if (mqttClient.publish(topic.c_str(), 0, true, pld_buffer) == true) {
+		if (mqttClient.publish(topic.c_str(), 0, true, pld_buffer, strlen(pld_buffer)) == true) {
 			Serial.println("Sent data for " + device);
 		} else {
 			Serial.print("Error sending device data message.");
@@ -278,7 +291,7 @@ void sendHaConfig() {
 	serializeJson(tracker_conf, tracker_buffer);
 
 	if (
-		mqttClient.publish((discovery_prefix + sensor_topic  + prefix + "/" + node_name + "/" + config_topic).c_str(), 0, true, tracker_buffer) == true) {
+		mqttClient.publish((discovery_prefix + sensor_topic  + prefix + "/" + node_name + "/" + config_topic).c_str(), 0, true, tracker_buffer, strlen(tracker_buffer)) == true) {
 		Serial.println("Config sent for " + node_name);
 	} else {
 		Serial.println("Error sending HA config");
@@ -291,7 +304,7 @@ void onMqttConnect(bool sessionPresent) {
 	digitalWrite(LED_BUILTIN, !LED_ON);
 	mqttRetryAttempts = 0;
 	
-	if (mqttClient.publish(availabilityTopic.c_str(), 0, 1, "online") == true) {
+	if (mqttClient.publish(availabilityTopic.c_str(), 0, true, "online") == true) {
 		Serial.print("Success sending message to topic:\t");
 		Serial.println(availabilityTopic);
 		String alive_topic = root_topic + "alive/+";
@@ -314,18 +327,27 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 		strcpy(pldArr, payload);
 		String pld = pldArr;
 		if (pld.indexOf("True") >= 0) {
-			Serial.println("Adding " + uid);
 			if (uid.indexOf(":") >= 0) {
-				macs.push_back(uid);
+				if (std::find(macs.begin(), macs.end(), uid) == macs.end()) {
+					Serial.println("Adding MAC  " + uid);
+					macs.push_back(uid);
+				} else {
+					Serial.println("Skipping duplicated MAC  " + uid);
+				}
 			} else if (uid.indexOf("-") >= 0) {
-				uuids.push_back(uid);
+				if (std::find(uuids.begin(), uuids.end(), uid) == uuids.end()) {
+					Serial.println("Adding UUID" + uid);
+					uuids.push_back(uid);
+				} else {
+					Serial.println("Skipping duplicated UUID  " + uid);
+				}
 			}
 			return;
 		}
 	}
 	Serial.println("Removing " + uid);
 	macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
-	uuids.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
+	uuids.erase(std::remove(uuids.begin(), uuids.end(), uid), uuids.end());
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {

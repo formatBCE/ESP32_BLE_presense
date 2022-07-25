@@ -27,6 +27,8 @@ String sensor_topic  = "sensor/";
 #define source_type_value "bluetooth_le"
 #define unique_id_param "unique_id"
 
+#define ntp_server "pool.ntp.org"
+
 #define LED_BUILTIN 2
 #define LED_ON 0
 
