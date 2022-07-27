@@ -436,8 +436,11 @@ void mainLoop() {
 }
 
 void configSetup() {
-	Serial.print("Setting AP (Access Point)…");
-  	WiFi.softAP(ap_ssid);
+	byte mac[6];
+	WiFi.macAddress(mac);
+  	String ssid = ap_ssid + "-" + String(mac[4],HEX) + String(mac[5],HEX);
+	Serial.println("Setting AP " + ssid);
+	WiFi.softAP(ssid.c_str());
 	IPAddress IP = WiFi.softAPIP();
   	Serial.print("AP IP address: ");
   	Serial.println(IP);
