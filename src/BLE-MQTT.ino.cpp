@@ -382,6 +382,41 @@ void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
+void configurationBlock() {
+	// Send a GET request to <ESP_IP>/get?input1=<inputMessage>
+	server.on("/config", HTTP_GET, [] (AsyncWebServerRequest* request) {
+		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
+		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
+		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
+		String mqtt_port_param = request->getParam(PARAM_INPUT_4)->value();
+		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
+		String mqtt_pass_param = request->getParam(PARAM_INPUT_6)->value();
+		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
+		preferences.begin(main_prefs, false);
+		if (isSetUp) {
+			// changing existing configuration, preserving old passwords
+			if (wifi_pwd_param.length() == 0) {
+				wifi_pwd_param = wifi_pwd;
+			}
+			if (mqtt_pass_param.length() == 0) {
+				mqtt_pass_param = mqtt_pass;
+			}
+		}
+		preferences.clear();
+		preferences.putString(wifi_ssid_pref, wifi_ssid_param);
+		preferences.putString(wifi_pwd_pref, wifi_pwd_param);
+		preferences.putString(mqtt_ip_pref, mqtt_ip_param);
+		preferences.putInt(mqtt_port_pref, mqtt_port_param.toInt());
+		preferences.putString(mqtt_user_pref, mqtt_user_param);
+		preferences.putString(mqtt_pass_pref, mqtt_pass_param);
+		preferences.putString(node_name_pref, node_name_param);
+		preferences.end();
+		request->send_P(200, "text/html", confirm_html, processor);
+		delay(2000);
+		ESP.restart();
+	});
+}
+
 void mainSetup() {
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LED_ON);
@@ -416,8 +451,9 @@ void mainSetup() {
 		&NimBLEScan,
 		1);
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-		request->send_P(200, "text/html", reset_html, processor);
+		request->send_P(200, "text/html", config_html, processor);
 	});
+	configurationBlock();
 	server.on("/reset", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		preferences.begin(main_prefs, false);
 		preferences.clear();
@@ -449,30 +485,7 @@ void configSetup() {
 		request->send_P(200, "text/html", index_html, processor);
 	});
 
-	// Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-	server.on("/config", HTTP_GET, [] (AsyncWebServerRequest* request) {
-		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
-		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
-		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
-		String mqtt_port_param = request->getParam(PARAM_INPUT_4)->value();
-		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
-		String mqtt_pass_param = request->getParam(PARAM_INPUT_6)->value();
-		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
-		preferences.begin(main_prefs, false);
-		preferences.clear();
-		preferences.putString(wifi_ssid_pref, wifi_ssid_param);
-		preferences.putString(wifi_pwd_pref, wifi_pwd_param);
-		preferences.putString(mqtt_ip_pref, mqtt_ip_param);
-		preferences.putInt(mqtt_port_pref, mqtt_port_param.toInt());
-		preferences.putString(mqtt_user_pref, mqtt_user_param);
-		preferences.putString(mqtt_pass_pref, mqtt_pass_param);
-		preferences.putString(node_name_pref, node_name_param);
-		preferences.end();
-
-		request->send_P(200, "text/html", confirm_html, processor);
-		delay(3000);
-		ESP.restart();
-	});
+	configurationBlock();
 }
 
 bool readPrefs() {

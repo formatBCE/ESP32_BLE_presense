@@ -67,7 +67,6 @@ input[type=submit] {
 <p>Insert required data into fields below, and save configuration.</p>
 <p>Device will reboot and connect to your WiFi and MQTT automatically.&nbsp;</p>
 <p><span style="color: #ff0000;"><strong>PLEASE DOUBLE-CHECK ENTERED DATA BEFORE SAVING!</strong></span></p>
-<p>After saving, there will be no way to change them.</p>
 <p>&nbsp;</p>
 <form action="/config">
 <p><strong>WiFi (2.4 GHz)</strong></p>
@@ -78,11 +77,11 @@ input[type=submit] {
 <p>Broker port: <input name="input4" type="number" value="1883" /></p>
 <p>User: <input name="input5" type="text" /></p>
 <p>Password: <input name="input6" type="text" /></p>
-<p>Node name: <input name="input7" type="text" value="living_room" /></p>
+<p>Node name: <input name="input7" type="text" placeholder="living_room" /></p>
 <p><input type="submit" value="Save and reboot" /></p>
 </form>
 </body></html>)rawliteral";
-const char reset_html[] PROGMEM = R"rawliteral(
+const char config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -105,15 +104,21 @@ input[type=submit] {
 </form>
 <h4>&nbsp;</h4>
 <h4>CURRENT CONFIGURATION</h4>
-<p>Room name: %ROOM_NAME%</p>
-<p>WiFi SSID: %WIFI%</p>
-<p>MQTT IP: %MQTT_IP%</p>
-<p>MQTT port: %MQTT_PORT%</p>
-<p>MQTT user: %MQTT_USER%</p>
+<form action="/config">
+<p><strong>WiFi (2.4 GHz)</strong></p>
+<p>SSID: <input name="input1" type="text" value ="%WIFI%" /></p>
+<p>Password: <input name="input2" type="text" placeholder="Leave blank if not changed"/></p>
+<p><strong>MQTT</strong></p>
+<p>Broker IP: <input name="input3" type="text" value="%MQTT_IP%" /></p>
+<p>Broker port: <input name="input4" type="number" value="%MQTT_PORT%" /></p>
+<p>User: <input name="input5" type="text" value="%MQTT_USER%"/></p>
+<p>Password: <input name="input6" type="text" placeholder="Leave blank if not changed"/></p>
+<p>Node name: <input name="input7" type="text" value="%ROOM_NAME%" /></p>
+<p><input type="submit" value="Change and restart" /></p>
+</form>
 <h4>&nbsp;</h4>
 <h4>RESET CONFIGURATION</h4>
-<p>You may reset device configuration on this page.</p>
-<p>After resetting, connect to WiFi access point "EspBleScanner", and configure device from scratch.</p>
+<p>After resetting, connect to WiFi access point "EspBleScanner-...", and configure device from scratch.</p>
 <form action="/reset">
 <p><input type="submit" value="Reset configuration and restart" /></p>
 </form>
