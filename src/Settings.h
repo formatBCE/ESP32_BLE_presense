@@ -41,7 +41,7 @@ String sensor_topic  = "sensor/";
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x10 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
-const char index_html[] PROGMEM = R"rawliteral(
+const char wifi_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -63,25 +63,16 @@ input[type=submit] {
 <p><input type="submit" value="Update firmware" /></p>
 </form>
 <h4>&nbsp;</h4>
-<h4>CONFIGURATION</h4>
-<p>Insert required data into fields below, and save configuration.</p>
-<p>Device will reboot and connect to your WiFi and MQTT automatically.&nbsp;</p>
-<p><span style="color: #ff0000;"><strong>PLEASE DOUBLE-CHECK ENTERED DATA BEFORE SAVING!</strong></span></p>
+<h4>WIFI CONFIGURATION (2.4 GHz)</h4>
 <p>&nbsp;</p>
-<form action="/config">
-<p><strong>WiFi (2.4 GHz)</strong></p>
-<p>SSID: <input name="input1" type="text" /></p>
+<form action="/config_wifi">
+<p>Room name (unique): <input name="input7" type="text" placeholder="living_room" value="%ROOM_NAME%" /></p>
+<p>SSID: <input name="input1" type="text" value="%WIFI%" /></p>
 <p>Password: <input name="input2" type="text" /></p>
-<p><strong>MQTT</strong></p>
-<p>Broker IP: <input name="input3" type="text" value="192.168.0.1" /></p>
-<p>Broker port: <input name="input4" type="number" value="1883" /></p>
-<p>User: <input name="input5" type="text" /></p>
-<p>Password: <input name="input6" type="text" /></p>
-<p>Node name: <input name="input7" type="text" placeholder="living_room" /></p>
 <p><input type="submit" value="Save and reboot" /></p>
 </form>
 </body></html>)rawliteral";
-const char config_html[] PROGMEM = R"rawliteral(
+const char mqtt_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -103,43 +94,113 @@ input[type=submit] {
 <p><input type="submit" value="Update firmware" /></p>
 </form>
 <h4>&nbsp;</h4>
-<h4>CURRENT CONFIGURATION</h4>
-<form action="/config">
-<p><strong>WiFi (2.4 GHz)</strong></p>
-<p>SSID: <input name="input1" type="text" value ="%WIFI%" /></p>
-<p>Password: <input name="input2" type="text" placeholder="Leave blank if unchanged"/></p>
-<p><strong>MQTT</strong></p><p><strong><span style="color: #ff0000;">%MQTT_INACCESSIBLE%</span></strong></p>
-<p>Broker IP: <input name="input3" type="text" value="%MQTT_IP%" /></p>
-<p>Broker port: <input name="input4" type="number" value="%MQTT_PORT%" /></p>
-<p>User: <input name="input5" type="text" value="%MQTT_USER%"/></p>
-<p>Password: <input name="input6" type="text" placeholder="Leave blank if unchanged"/></p>
-<p>Node name: <input name="input7" type="text" value="%ROOM_NAME%" /></p>
-<p><input type="submit" value="Change and restart" /></p>
+<h4>MQTT SERVER CONFIGURATION</h4>
+<p>&nbsp;</p>
+<form action="/config_mqtt">
+<p>Broker IP: <input name="input3" type="text" placeholder="192.168.0.1" value="%MQTT_IP%" /></p>
+<p>Broker port: <input name="input4" type="number" placeholder="1883" value="%MQTT_PORT%" /></p>
+<p>User: <input name="input5" type="text" value="%MQTT_USER%" /></p>
+<p>Password: <input name="input6" type="text"/></p>
+<p><input type="submit" value="Save and reboot" /></p>
 </form>
 <h4>&nbsp;</h4>
 <h4>RESET CONFIGURATION</h4>
 <p>After resetting, connect to WiFi access point "EspBleScanner-...", and configure device from scratch.</p>
 <form action="/reset">
-<p><input type="submit" value="Reset configuration and restart" /></p>
+<p><input type="submit" value="Reset configuration"/></p>
 </form>
 </body></html>)rawliteral";
-const char confirm_html[] PROGMEM = R"rawliteral(
+const char info_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<title>Format BLE Tracker %VERSION%</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style> 
+input[type=submit] {
+  background-color: #5e9ca0;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+</style>
+</head><body>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
+<h4>by @formatBCE</h4>
+<form action="/update">
+<p><input type="submit" value="Update firmware" /></p>
+</form>
+<h4>&nbsp;</h4>
+<strong><span style="color: #ff0000;">%MQTT_INACCESSIBLE%</span></strong></p>
+<h4>CURRENT CONFIGURATION</h4>
+<p>Room name: %ROOM_NAME%</p>
+<p>WiFi SSID: %WIFI%</p>
+<p>MQTT IP: %MQTT_IP%</p><p>
+<p>MQTT port: %MQTT_PORT%</p>
+<p>MQTT user: %MQTT_USER%</p>
+<h4>&nbsp;</h4>
+<h4>CHANGE MQTT CONFIGURATION</h4>
+<form action="/change_mqtt_config">
+<p><input type="submit" value="Change MQTT"/></p>
+</form>
+<h4>&nbsp;</h4>
+<h4>RESET CONFIGURATION</h4>
+<p>After resetting, connect to WiFi access point "EspBleScanner-...", and configure device from scratch.</p>
+<form action="/reset">
+<p><input type="submit" value="Reset configuration"/></p>
+</form>
+</body></html>)rawliteral";
+const char confirm_wifi_setup_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head><body>
 <h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
-<p>Configuration saved, device restarted. You may close this page now.</p>
+<p>WiFi configuration saved, device restarted. Connect to your main WiFi, and proceed to <a href="http://%WIFI_IP%">node web address</a> to finish setup.</p>
 </body></html>)rawliteral";
-const char incorrect_config_html[] PROGMEM = R"rawliteral(
+const char confirm_mqtt_setup_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+</head><body>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
+<h4>by @formatBCE</h4>
+<p>MQTT configuration saved, device restarted. Wait for couple seconds, and proceed to <a href="http://%WIFI_IP%">node info page</a>.</p>
+</body></html>)rawliteral";
+const char confirm_reset_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<title>Format BLE Tracker %VERSION%</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head><body>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
+<h4>by @formatBCE</h4>
+<p>Configuration saved, device restarted. You may close this page now, connect to WiFi access point "EspBleScanner-..." and re-configure node.</p>
+</body></html>)rawliteral";
+const char incorrect_wifi_config_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<title>Format BLE Tracker %VERSION%</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style> 
+input[type=submit] {
+  background-color: #5e9ca0;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+</style>
 </head><body>
 <h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
 <p>Cannot connect to WiFi. Please return to previous page and check entered data.</p>
+<form action="/">
+<p><input type="submit" value="Go back"/></p>
+</form>
+<h4>&nbsp;</h4>
 </body></html>)rawliteral";
 const char* PARAM_INPUT_1 = "input1";
 const char* PARAM_INPUT_2 = "input2";

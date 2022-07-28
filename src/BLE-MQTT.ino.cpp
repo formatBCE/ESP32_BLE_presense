@@ -28,7 +28,8 @@ extern "C" {
 AsyncWebServer server(80);
 size_t content_len;
 Preferences preferences;
-bool isSetUp = false;
+bool isWifiSetUp = false;
+bool isMqttSetUp = false;
 
 String wifi_ssid = "";
 String wifi_pwd = "";
@@ -138,7 +139,9 @@ void WiFiEvent(WiFiEvent_t event) {
 		Serial.print("Hostname: \t");
 		Serial.println(WiFi.getHostname());
 		configTime(0, 0, ntp_server);
-		connectToMqtt();
+		if (isMqttSetUp) {
+			connectToMqtt();
+		}
 		if (xTimerIsTimerActive(wifiReconnectTimer) != pdFALSE) {
 			Serial.println("Stopping wifi reconnect timer");
 			xTimerStop(wifiReconnectTimer, 0);
@@ -367,6 +370,9 @@ String processor(const String& var) {
 		return mqtt_ip;
 	}
 	if (var == "MQTT_PORT") {
+		if (mqtt_port == 0) {
+			return String();
+		}
 		return String(mqtt_port);
 	}
 	if (var == "MQTT_USER") {
@@ -376,10 +382,13 @@ String processor(const String& var) {
 		if (mqttClient.connected()) {
 			return String();
 		}
-		return "[DISCONNECTED, CHECK DATA]";
+		return "MQTT is inaccessible, check settings";
 	}
 	if (var == "ROOM_NAME") {
 		return node_name;
+	}
+	if (var == "WIFI_IP") {
+		return localIp;
 	}
 	return String();
 }
@@ -388,95 +397,73 @@ void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
-void configurationBlock() {
-	// Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-	server.on("/config", HTTP_GET, [] (AsyncWebServerRequest* request) {
-		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
-		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
-		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
-		String mqtt_port_param = request->getParam(PARAM_INPUT_4)->value();
-		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
-		String mqtt_pass_param = request->getParam(PARAM_INPUT_6)->value();
-		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
-		if (isSetUp) {
-			// changing existing configuration, preserving old passwords
-			if (wifi_pwd_param.length() == 0) {
-				wifi_pwd_param = wifi_pwd;
-			}
-			if (mqtt_pass_param.length() == 0) {
-				mqtt_pass_param = mqtt_pass;
-			}
-		} else {
-			WiFi.begin(wifi_ssid_param.c_str(), wifi_pwd_param.c_str());
-			long m = millis();
-			while(WiFi.status() != WL_CONNECTED && ((millis() - m) < 4000)) {
-				delay(500);
-			}
-			if (WiFi.status() != WL_CONNECTED) {
-				request->send_P(200, "text/html", incorrect_config_html, processor);
-				return;
-			}
-		}
-		preferences.begin(main_prefs, false);
-		preferences.clear();
-		preferences.putString(wifi_ssid_pref, wifi_ssid_param);
-		preferences.putString(wifi_pwd_pref, wifi_pwd_param);
-		preferences.putString(mqtt_ip_pref, mqtt_ip_param);
-		preferences.putInt(mqtt_port_pref, mqtt_port_param.toInt());
-		preferences.putString(mqtt_user_pref, mqtt_user_param);
-		preferences.putString(mqtt_pass_pref, mqtt_pass_param);
-		preferences.putString(node_name_pref, node_name_param);
-		preferences.end();
-		request->send_P(200, "text/html", confirm_html, processor);
-		delay(2000);
-		ESP.restart();
-	});
-}
-
 void mainSetup() {
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LED_ON);
 
-	mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
 	wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
-
+    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
+		
 	WiFi.onEvent(WiFiEvent);
-
-	mqttClient.onConnect(onMqttConnect);
-	mqttClient.onDisconnect(onMqttDisconnect);
-	mqttClient.onMessage(onMqttMessage);
-
-	mqttClient.setServer(mqtt_ip.c_str(), mqtt_port);
-	mqttClient.setWill(availabilityTopic.c_str(), 0, 1, "offline");
-	mqttClient.setKeepAlive(60);
-
 	connectToWifi();
 
-  	NimBLEDevice::init("");
-	NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-  	pBLEScan = NimBLEDevice::getScan();
-	pBLEScan->setAdvertisedDeviceCallbacks(new BleAdvertisedDeviceCallbacks());
-	pBLEScan->setInterval(bleScanInterval);
-	pBLEScan->setWindow(bleScanWindow);
-	xTaskCreatePinnedToCore(
-		scanForDevices,
-		"BLE Scan",
-		4096,
-		pBLEScan,
-		1,
-		&NimBLEScan,
-		1);
+	if (isMqttSetUp) {
+		mqttClient.onConnect(onMqttConnect);
+		mqttClient.onDisconnect(onMqttDisconnect);
+		mqttClient.onMessage(onMqttMessage);
+
+		mqttClient.setServer(mqtt_ip.c_str(), mqtt_port);
+		mqttClient.setWill(availabilityTopic.c_str(), 0, 1, "offline");
+		mqttClient.setKeepAlive(60);
+
+		NimBLEDevice::init("");
+		NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+		pBLEScan = NimBLEDevice::getScan();
+		pBLEScan->setAdvertisedDeviceCallbacks(new BleAdvertisedDeviceCallbacks());
+		pBLEScan->setInterval(bleScanInterval);
+		pBLEScan->setWindow(bleScanWindow);
+		xTaskCreatePinnedToCore(
+			scanForDevices,
+			"BLE Scan",
+			4096,
+			pBLEScan,
+			1,
+			&NimBLEScan,
+			1);
+	}
+
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-		request->send_P(200, "text/html", config_html, processor);
+		if (isMqttSetUp) {
+			request->send_P(200, "text/html", info_html, processor);
+		} else {
+			request->send_P(200, "text/html", mqtt_config_html, processor);
+		}
 	});
-	configurationBlock();
+	server.on("/change_mqtt_config", HTTP_GET, [](AsyncWebServerRequest* request) {
+			request->send_P(200, "text/html", mqtt_config_html, processor);
+	});
 	server.on("/reset", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		preferences.begin(main_prefs, false);
 		preferences.clear();
 		preferences.end();
-		request->send_P(200, "text/html", confirm_html, processor);
+		request->send_P(200, "text/html", confirm_reset_html, processor);
 		digitalWrite(LED_BUILTIN, LED_ON);
 		delay(3000);
+		ESP.restart();
+	});
+	server.on("/config_mqtt", HTTP_GET, [] (AsyncWebServerRequest* request) {
+		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
+		String mqtt_port_param = request->getParam(PARAM_INPUT_4)->value();
+		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
+		String mqtt_pass_param = request->getParam(PARAM_INPUT_6)->value();
+		preferences.begin(main_prefs, false);
+		preferences.putString(mqtt_ip_pref, mqtt_ip_param);
+		preferences.putInt(mqtt_port_pref, mqtt_port_param.toInt());
+		preferences.putString(mqtt_user_pref, mqtt_user_param);
+		preferences.putString(mqtt_pass_pref, mqtt_pass_param);
+		preferences.end();
+		request->send_P(200, "text/html", confirm_mqtt_setup_html, processor);
+		delay(2000);
 		ESP.restart();
 	});
 }
@@ -498,31 +485,60 @@ void configSetup() {
   	Serial.print("AP IP address: ");
   	Serial.println(IP);
   	// Send web page with input fields to client
-	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request){
-		request->send_P(200, "text/html", index_html, processor);
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send_P(200, "text/html", wifi_config_html, processor);
 	});
-
-	configurationBlock();
+	server.on("/config_wifi", HTTP_GET, [] (AsyncWebServerRequest* request) {
+		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
+		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
+		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
+		WiFi.begin(wifi_ssid_param.c_str(), wifi_pwd_param.c_str());
+		long m = millis();
+		while(WiFi.status() != WL_CONNECTED && ((millis() - m) < 4000)) {
+			delay(500);
+		}
+		if (WiFi.status() != WL_CONNECTED) {
+			request->send_P(200, "text/html", incorrect_wifi_config_html, processor);
+			return;
+		} else {
+			localIp = WiFi.localIP().toString().c_str();
+		}
+		preferences.begin(main_prefs, false);
+		preferences.clear();
+		preferences.putString(wifi_ssid_pref, wifi_ssid_param);
+		preferences.putString(wifi_pwd_pref, wifi_pwd_param);
+		preferences.putString(node_name_pref, node_name_param);
+		preferences.end();
+		request->send_P(200, "text/html", confirm_wifi_setup_html, processor);
+		delay(2000);
+		ESP.restart();
+	});
 }
 
-bool readPrefs() {
+bool readWifiPrefs() {
 	preferences.begin(main_prefs, true);
 	wifi_ssid = preferences.getString(wifi_ssid_pref);
 	wifi_pwd = preferences.getString(wifi_pwd_pref);
+	node_name = preferences.getString(node_name_pref);
+	preferences.end();
+
+	return wifi_ssid != ""
+		&& node_name != "";
+}
+
+bool readMqttPrefs() {
+	preferences.begin(main_prefs, true);
 	mqtt_ip = preferences.getString(mqtt_ip_pref);
 	mqtt_port = preferences.getInt(mqtt_port_pref);
 	mqtt_user = preferences.getString(mqtt_user_pref);
 	mqtt_pass = preferences.getString(mqtt_pass_pref);
-	node_name = preferences.getString(node_name_pref);
 	preferences.end();
 
 	availabilityTopic = root_topic + tracker_topic + node_name + "/availability";
 	stateTopic = root_topic + tracker_topic + node_name + "/state";
 
-	return wifi_ssid != "" 
-		&& mqtt_ip != "" 
-		&& mqtt_port != 0 
-		&& node_name != "";
+	return mqtt_ip != "" 
+		&& mqtt_port != 0;
 }
 
 void handleUpdate(AsyncWebServerRequest* request) {
@@ -573,8 +589,9 @@ void commonSetup() {
 
 void setup() {
 	Serial.begin(115200);
-	isSetUp = readPrefs();
-	if (isSetUp) {
+	isWifiSetUp = readWifiPrefs();
+	isMqttSetUp = readMqttPrefs();
+	if (isWifiSetUp) {
 	  	mainSetup();
 	} else {
 		configSetup();
@@ -583,7 +600,7 @@ void setup() {
 }
 
 void loop() {
-	if (isSetUp) {
+	if (isWifiSetUp && isMqttSetUp) {
 		mainLoop();
 	}
 }
