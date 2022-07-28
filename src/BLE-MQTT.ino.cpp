@@ -372,6 +372,12 @@ String processor(const String& var) {
 	if (var == "MQTT_USER") {
 		return mqtt_user;
 	}
+	if (var == "MQTT_INACCESSIBLE") {
+		if (mqttClient.connected()) {
+			return String();
+		}
+		return "[DISCONNECTED, CHECK DATA]";
+	}
 	if (var == "ROOM_NAME") {
 		return node_name;
 	}
@@ -392,7 +398,6 @@ void configurationBlock() {
 		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
 		String mqtt_pass_param = request->getParam(PARAM_INPUT_6)->value();
 		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
-		preferences.begin(main_prefs, false);
 		if (isSetUp) {
 			// changing existing configuration, preserving old passwords
 			if (wifi_pwd_param.length() == 0) {
@@ -401,7 +406,18 @@ void configurationBlock() {
 			if (mqtt_pass_param.length() == 0) {
 				mqtt_pass_param = mqtt_pass;
 			}
+		} else {
+			WiFi.begin(wifi_ssid_param.c_str(), wifi_pwd_param.c_str());
+			long m = millis();
+			while(WiFi.status() != WL_CONNECTED && ((millis() - m) < 4000)) {
+				delay(500);
+			}
+			if (WiFi.status() != WL_CONNECTED) {
+				request->send_P(200, "text/html", incorrect_config_html, processor);
+				return;
+			}
 		}
+		preferences.begin(main_prefs, false);
 		preferences.clear();
 		preferences.putString(wifi_ssid_pref, wifi_ssid_param);
 		preferences.putString(wifi_pwd_pref, wifi_pwd_param);
@@ -472,6 +488,7 @@ void mainLoop() {
 }
 
 void configSetup() {
+	WiFi.mode(WIFI_MODE_APSTA);
 	byte mac[6];
 	WiFi.macAddress(mac);
   	String ssid = ap_ssid + "-" + String(mac[4],HEX) + String(mac[5],HEX);

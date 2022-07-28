@@ -107,12 +107,12 @@ input[type=submit] {
 <form action="/config">
 <p><strong>WiFi (2.4 GHz)</strong></p>
 <p>SSID: <input name="input1" type="text" value ="%WIFI%" /></p>
-<p>Password: <input name="input2" type="text" placeholder="Leave blank if not changed"/></p>
-<p><strong>MQTT</strong></p>
+<p>Password: <input name="input2" type="text" placeholder="Leave blank if unchanged"/></p>
+<p><strong>MQTT</strong></p><p><strong><span style="color: #ff0000;">%MQTT_INACCESSIBLE%</span></strong></p>
 <p>Broker IP: <input name="input3" type="text" value="%MQTT_IP%" /></p>
 <p>Broker port: <input name="input4" type="number" value="%MQTT_PORT%" /></p>
 <p>User: <input name="input5" type="text" value="%MQTT_USER%"/></p>
-<p>Password: <input name="input6" type="text" placeholder="Leave blank if not changed"/></p>
+<p>Password: <input name="input6" type="text" placeholder="Leave blank if unchanged"/></p>
 <p>Node name: <input name="input7" type="text" value="%ROOM_NAME%" /></p>
 <p><input type="submit" value="Change and restart" /></p>
 </form>
@@ -131,6 +131,15 @@ const char confirm_html[] PROGMEM = R"rawliteral(
 <h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
 <p>Configuration saved, device restarted. You may close this page now.</p>
+</body></html>)rawliteral";
+const char incorrect_config_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<title>Format BLE Tracker %VERSION%</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head><body>
+<h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
+<h4>by @formatBCE</h4>
+<p>Cannot connect to WiFi. Please return to previous page and check entered data.</p>
 </body></html>)rawliteral";
 const char* PARAM_INPUT_1 = "input1";
 const char* PARAM_INPUT_2 = "input2";
