@@ -1,5 +1,5 @@
 
-#define version "0.0.4"
+#define version "0.0.5"
 String ap_ssid = "EspBleScanner";
 
 #define main_prefs "ble_scan_prefs"
