@@ -40,6 +40,8 @@ String sensor_topic  = "sensor/";
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x10 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
+#define hardResetTimeoutInterval 5000
+
 const char captive_portal_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
@@ -199,7 +201,7 @@ const char confirm_reset_html[] PROGMEM = R"rawliteral(
 </head><body>
 <h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
-<p>Configuration saved, device restarted. You may close this page now, connect to WiFi access point "EspBleScanner-..." and re-configure node.</p>
+<p>Configuration saved, device restarting. You may close this page now, connect to WiFi access point "EspBleScanner-..." and re-configure node.</p>
 </body></html>)rawliteral";
 const char incorrect_wifi_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>

@@ -35,6 +35,7 @@ bool isWifiSetUp = false;
 bool isMqttSetUp = false;
 int ledState = LOW;   
 unsigned long previousBlinkMillis = 0;
+unsigned long previousRestart;
 
 String wifi_ssid = "";
 String wifi_pwd = "";
@@ -57,7 +58,7 @@ TimerHandle_t wifiReconnectTimer;
 String localIp;
 byte mqttRetryAttempts = 0;
 byte wifiRetryAttempts = 0;
-unsigned long last = 0;
+unsigned long lastBleScan = 0;
 NimBLEScan* pBLEScan;
 TaskHandle_t NimBLEScan;
 size_t commandLength;
@@ -248,13 +249,13 @@ void reportDevice(NimBLEAdvertisedDevice& advertisedDevice) {
 
 void scanForDevices(void* parameter) {
 	while (1) {
-		if (WiFi.isConnected() && (millis() - last > (waitTime * 1000) || last == 0)) {
+		if (WiFi.isConnected() && (millis() - lastBleScan > (waitTime * 1000) || lastBleScan == 0)) {
 			Serial.println("Scanning...\t");
 			pBLEScan->start(scanTime);
 			Serial.println("Scanning done.");
 			pBLEScan->clearResults();
 			sendTelemetry();
-			last = millis();
+			lastBleScan = millis();
 		}
 	}
 }
@@ -408,7 +409,6 @@ void notFound(AsyncWebServerRequest* request) {
 }
 
 void mainSetup() {
-	//digitalWrite(LED_BUILTIN, LED_ON);
 
 	wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
     mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
@@ -456,8 +456,7 @@ void mainSetup() {
 		preferences.clear();
 		preferences.end();
 		request->send_P(200, "text/html", confirm_reset_html, processor);
-		//digitalWrite(LED_BUILTIN, LED_ON);
-		delay(3000);
+		delay(2000);
 		ESP.restart();
 	});
 	server.on("/mqtt_setup_save", HTTP_GET, [] (AsyncWebServerRequest* request) {
@@ -616,8 +615,33 @@ void commonSetup() {
 	Update.onProgress(printProgress);
 }
 
+void writeRestarts(int count) {
+	preferences.begin(main_prefs, false);
+	int restarts_count = 0;
+	if (count == 0) {
+		preferences.putInt("restarts_count", 0);
+		Serial.println("Dropping restart counter.");
+		preferences.end();
+	} else {
+		restarts_count = preferences.getInt("restarts_count") + count;
+		if (restarts_count > 4) {
+			Serial.println("RESETTING CONFIGURATION");
+			// resetting config
+			preferences.clear();
+			preferences.end();
+			ESP.restart();
+		} else {
+			preferences.putInt("restarts_count", restarts_count);
+			preferences.end();
+			Serial.println("CONSECUTIVE RESTARTS COUNT: " + String(restarts_count));
+		}
+	}
+}
+
 void setup() {
 	Serial.begin(115200);
+	previousRestart = millis();
+	writeRestarts(1);
 	pinMode(LED_BUILTIN, OUTPUT);
 	isWifiSetUp = readWifiPrefs();
 	isMqttSetUp = readMqttPrefs();
@@ -639,6 +663,10 @@ void blink(unsigned long delay) {
 }
 
 void loop() {
+	if (previousRestart > 0 && millis() > (previousRestart + hardResetTimeoutInterval)) {
+		previousRestart = 0;
+		writeRestarts(0);
+	}
 	if (isWifiSetUp) {
 		if (!WiFi.isConnected()) {
 			blink(500);
