@@ -68,7 +68,7 @@ input[type=submit] {
 <form action="/config_wifi">
 <p>Room name (unique): <input name="input7" type="text" placeholder="living_room" value="%ROOM_NAME%" /></p>
 <p>SSID: <input name="input1" type="text" value="%WIFI%" /></p>
-<p>Password: <input name="input2" type="text" /></p>
+<p>Password: <input type="password" name="input2" value="%WIFI_PASS%" /></p>
 <p><input type="submit" value="Save and reboot" /></p>
 </form>
 </body></html>)rawliteral";
@@ -100,7 +100,7 @@ input[type=submit] {
 <p>Broker IP: <input name="input3" type="text" placeholder="192.168.0.1" value="%MQTT_IP%" /></p>
 <p>Broker port: <input name="input4" type="number" placeholder="1883" value="%MQTT_PORT%" /></p>
 <p>User: <input name="input5" type="text" value="%MQTT_USER%" /></p>
-<p>Password: <input name="input6" type="text"/></p>
+<p>Password: <input type="password" name="input6" value="%MQTT_PASS%" /></p>
 <p><input type="submit" value="Save and reboot" /></p>
 </form>
 <h4>&nbsp;</h4>

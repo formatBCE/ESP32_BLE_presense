@@ -366,6 +366,9 @@ String processor(const String& var) {
 	if (var == "WIFI") {
 		return wifi_ssid;
 	}
+	if (var == "WIFI_PASS") {
+		return wifi_pwd;
+	}
 	if (var == "MQTT_IP") {
 		return mqtt_ip;
 	}
@@ -377,6 +380,9 @@ String processor(const String& var) {
 	}
 	if (var == "MQTT_USER") {
 		return mqtt_user;
+	}
+	if (var == "MQTT_PASS") {
+		return mqtt_pass;
 	}
 	if (var == "MQTT_INACCESSIBLE") {
 		if (mqttClient.connected()) {
