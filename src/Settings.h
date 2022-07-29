@@ -64,7 +64,6 @@ input[type=submit] {
 <form action="/wifi_setup">
 <p><input type="submit" value="Start configuration"/></p>
 </form>
-<h4>&nbsp;</h4>
 </body></html>)rawliteral";
 const char wifi_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
@@ -156,6 +155,7 @@ input[type=submit] {
 <form action="/update">
 <p><input type="submit" value="Update firmware" /></p>
 </form>
+<a href="https://www.buymeacoffee.com/formatbce" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
 <h4>&nbsp;</h4>
 <strong><span style="color: #ff0000;">%MQTT_INACCESSIBLE%</span></strong></p>
 <h4>CURRENT CONFIGURATION</h4>
