@@ -33,6 +33,8 @@ size_t content_len;
 Preferences preferences;
 bool isWifiSetUp = false;
 bool isMqttSetUp = false;
+int ledState = LOW;   
+unsigned long previousBlinkMillis = 0;
 
 String wifi_ssid = "";
 String wifi_pwd = "";
@@ -71,9 +73,6 @@ bool handleWifiDisconnect() {
 		Serial.println("WiFi appears to be connected. Not retrying.");
 		return true;
 	}
-	digitalWrite(LED_BUILTIN, !LED_ON);
-	delay(500);
-	digitalWrite(LED_BUILTIN, LED_ON);
 	if (wifiRetryAttempts > 10) {
 		Serial.println("Too many retries. Restarting.");
 		ESP.restart();
@@ -125,7 +124,7 @@ void handleMqttDisconnect() {
 			Serial.println("restarted");
 		}
   	} else {
-		Serial.print("Disconnected from WiFi; starting WiFi reconnect timiler\t");
+		Serial.print("Disconnected from WiFi; starting WiFi reconnect timer\t");
 		handleWifiDisconnect();
 	}
 }
@@ -306,7 +305,7 @@ void sendHaConfig() {
 
 void onMqttConnect(bool sessionPresent) {
   	Serial.println("Connected to MQTT.");
-	digitalWrite(LED_BUILTIN, !LED_ON);
+	digitalWrite(LED_BUILTIN, HIGH);
 	mqttRetryAttempts = 0;
 	
 	if (mqttClient.publish(availabilityTopic.c_str(), 0, true, "online") == true) {
@@ -357,7 +356,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
 	Serial.println("Disconnected from MQTT.");
-	digitalWrite(LED_BUILTIN, LED_ON);
+	digitalWrite(LED_BUILTIN, LOW);
 	handleMqttDisconnect();
 }
 
@@ -406,8 +405,7 @@ void notFound(AsyncWebServerRequest* request) {
 }
 
 void mainSetup() {
-	pinMode(LED_BUILTIN, OUTPUT);
-	digitalWrite(LED_BUILTIN, LED_ON);
+	//digitalWrite(LED_BUILTIN, LED_ON);
 
 	wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
     mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
@@ -455,7 +453,7 @@ void mainSetup() {
 		preferences.clear();
 		preferences.end();
 		request->send_P(200, "text/html", confirm_reset_html, processor);
-		digitalWrite(LED_BUILTIN, LED_ON);
+		//digitalWrite(LED_BUILTIN, LED_ON);
 		delay(3000);
 		ESP.restart();
 	});
@@ -617,6 +615,7 @@ void commonSetup() {
 
 void setup() {
 	Serial.begin(115200);
+	pinMode(LED_BUILTIN, OUTPUT);
 	isWifiSetUp = readWifiPrefs();
 	isMqttSetUp = readMqttPrefs();
 	if (isWifiSetUp) {
@@ -627,12 +626,27 @@ void setup() {
 	commonSetup();
 }
 
+void blink(unsigned long delay) {
+	unsigned long currentMillis = millis();
+  	if (currentMillis - previousBlinkMillis >= delay) {
+    	ledState = (ledState == LOW) ? HIGH : LOW;
+    	digitalWrite(LED_BUILTIN, ledState);
+    	previousBlinkMillis = currentMillis;
+  	}
+}
+
 void loop() {
 	if (isWifiSetUp) {
+		if (!WiFi.isConnected()) {
+			blink(500);
+		} else if (!mqttClient.connected()) {
+			blink(1000);
+		}
 		if (isMqttSetUp) {
 			mainLoop();
 		}
 	} else {
 		dnsServer.processNextRequest();
+		blink(250);
 	}
 }

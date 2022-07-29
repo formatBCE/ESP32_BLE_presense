@@ -30,7 +30,6 @@ String sensor_topic  = "sensor/";
 #define ntp_server "pool.ntp.org"
 
 #define LED_BUILTIN 2
-#define LED_ON 0
 
 #define serviceUUID "0xFFF0"
 #define characteristicUUID "0xFFF2"
