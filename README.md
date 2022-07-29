@@ -12,6 +12,7 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 1. Get the code from repository, and flash it to ESP32 using PlatformIO or other IDE.
 Or, download only firmware.bin file from latest release, and flash using ESP flasher or other flashing tool.
 Use [this file](https://github.com/formatBCE/ESP32_BLE_presense/blob/main/partitions_singleapp.csv) for partitioning reference.
+This is required only once, all other updates can be done over the air.
 
 2. Place chip in preferred location and power it up. Make sure you use good power adapter! Device will start blinking fast with LED.
 
@@ -39,6 +40,6 @@ Otherwise, local device IP will be shown.
 3. If WiFi is connected, but there's no MQTT configuration done, or MQTT server is inaccessible, LED will be blinking once per 2 seconds.
 4. If everything is alright, LED will be constantly flashing. On event of finding any defined beacon, LED will shortly flash off. This way you can make sure, that data are sent to MQTT.
 
-In case if you cannot find device IP address and go to configuration page (it may happen, for instance, when your WiFi network is down, or password was changed), you can manually reset device configuration. To do this, rebooot device bu button press or by reconnecting the power 5 times with period of less that 5 seconds. Device will erase configuration and return to Access Point mode.
+In case if you cannot find device IP address and go to configuration page (it may happen, for instance, when your WiFi network is down, or password was changed), you can manually reset device configuration. To do this, rebooot device by button press or by reconnecting the power 5 times with period of less that 5 seconds. Device will erase configuration and return to Access Point mode.
 
 
