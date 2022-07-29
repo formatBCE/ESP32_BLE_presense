@@ -3,14 +3,15 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 
 # Prerequisites:
 
-1. ESP32 device
+0. Please make sure, that you're using high-quality ESP32 device. I had many troubles with some no-name devices. This will guarantee stable connection and scanning, as well as smooth setup/update.
+1. ESP32 device (once more, use good one!)
 2. 2.4 GHz WiFi network
 3. MQTT server
 
 # Usage
 
 1. Get the code from repository, and flash it to ESP32 using PlatformIO or other IDE.
-Or, download only firmware.bin file from latest release, and flash using ESP flasher or other flashing tool.
+Or, download only bin file from latest release, and flash using ESP flasher or other flashing tool.
 Use [this file](https://github.com/formatBCE/ESP32_BLE_presense/blob/main/partitions_singleapp.csv) for partitioning reference.
 This is required only once, all other updates can be done over the air.
 
@@ -41,5 +42,9 @@ Otherwise, local device IP will be shown.
 4. If everything is alright, LED will be constantly flashing. On event of finding any defined beacon, LED will shortly flash off. This way you can make sure, that data are sent to MQTT.
 
 In case if you cannot find device IP address and go to configuration page (it may happen, for instance, when your WiFi network is down, or password was changed), you can manually reset device configuration. To do this, rebooot device by button press or by reconnecting the power 5 times with period of less that 5 seconds. Device will erase configuration and return to Access Point mode.
+
+OTA:
+- To avoid problems, use desktop for updating over the air. For me, updating with Android browser did not work.
+- If during OTA update, progress bar is stuck, just relaunch process by hitting "Update" button again.
 
 
