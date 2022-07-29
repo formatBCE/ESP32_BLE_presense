@@ -41,6 +41,30 @@ String sensor_topic  = "sensor/";
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x10 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
+const char captive_portal_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html><head>
+<title>Format BLE Tracker %VERSION%</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style> 
+input[type=submit] {
+  background-color: #5e9ca0;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+</style>
+</head><body>
+<h1 style="color: #5e9ca0;">Format BLE Tracker</h1>
+<h4>by @formatBCE</h4>
+<p>Hello! This is BLE tracker node config page. Please put your WiFi network configuration and choose node (room) name.</p>
+<form action="/wifi_setup">
+<p><input type="submit" value="Start configuration"/></p>
+</form>
+<h4>&nbsp;</h4>
+</body></html>)rawliteral";
 const char wifi_config_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>
 <title>Format BLE Tracker %VERSION%</title>
@@ -65,7 +89,7 @@ input[type=submit] {
 <h4>&nbsp;</h4>
 <h4>WIFI CONFIGURATION (2.4 GHz)</h4>
 <p>&nbsp;</p>
-<form action="/config_wifi">
+<form action="/wifi_setup_save">
 <p>Room name (unique): <input name="input7" type="text" placeholder="living_room" value="%ROOM_NAME%" /></p>
 <p>SSID: <input name="input1" type="text" value="%WIFI%" /></p>
 <p>Password: <input type="password" name="input2" value="%WIFI_PASS%" /></p>
@@ -96,7 +120,7 @@ input[type=submit] {
 <h4>&nbsp;</h4>
 <h4>MQTT SERVER CONFIGURATION</h4>
 <p>&nbsp;</p>
-<form action="/config_mqtt">
+<form action="/mqtt_setup_save">
 <p>Broker IP: <input name="input3" type="text" placeholder="192.168.0.1" value="%MQTT_IP%" /></p>
 <p>Broker port: <input name="input4" type="number" placeholder="1883" value="%MQTT_PORT%" /></p>
 <p>User: <input name="input5" type="text" value="%MQTT_USER%" /></p>
@@ -158,7 +182,7 @@ const char confirm_wifi_setup_html[] PROGMEM = R"rawliteral(
 </head><body>
 <h1 style="color: #5e9ca0;">Format BLE Tracker %VERSION%</h1>
 <h4>by @formatBCE</h4>
-<p>WiFi configuration saved, device restarted. Connect to your main WiFi, and proceed to <a href="http://%WIFI_IP%">node web address</a> to finish setup.</p>
+<p>WiFi configuration saved, device restarted. Connect to your main WiFi, and proceed to "http://%WIFI_IP%" web address to finish setup.</p>
 </body></html>)rawliteral";
 const char confirm_mqtt_setup_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html><head>

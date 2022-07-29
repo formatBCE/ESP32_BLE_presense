@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <DNSServer.h>
 #include <WiFi.h>
 #include "time.h"
 extern "C" {
@@ -24,7 +25,9 @@ extern "C" {
 #include <ArduinoJson.h>
 #include "Settings.h"
 
-// Config fields
+DNSServer dnsServer;
+IPAddress softApIp(8, 8, 8, 8);
+IPAddress softApNetMask(255, 255, 255, 0);
 AsyncWebServer server(80);
 size_t content_len;
 Preferences preferences;
@@ -41,7 +44,6 @@ String node_name = "";
 std::vector<String> macs;
 std::vector<String> uuids;
 
-// Main fields
 static const int scanTime = singleScanTime;
 static const int waitTime = scanInterval;
 String availabilityTopic;
@@ -457,7 +459,7 @@ void mainSetup() {
 		delay(3000);
 		ESP.restart();
 	});
-	server.on("/config_mqtt", HTTP_GET, [] (AsyncWebServerRequest* request) {
+	server.on("/mqtt_setup_save", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		String mqtt_ip_param = request->getParam(PARAM_INPUT_3)->value();
 		String mqtt_port_param = request->getParam(PARAM_INPUT_4)->value();
 		String mqtt_user_param = request->getParam(PARAM_INPUT_5)->value();
@@ -480,21 +482,38 @@ void mainLoop() {
 	TIMERG0.wdt_wprotect=0;
 }
 
+class CaptiveRequestHandler : public AsyncWebHandler {
+	public:
+	CaptiveRequestHandler() {}
+	virtual ~CaptiveRequestHandler() {}
+
+	bool canHandle(AsyncWebServerRequest *request){
+		return true;
+	}
+
+	void handleRequest(AsyncWebServerRequest *request) {
+		request->send_P(200, "text/html", captive_portal_html);
+	}
+};
+
 void configSetup() {
 	WiFi.mode(WIFI_MODE_APSTA);
 	byte mac[6];
 	WiFi.macAddress(mac);
   	String ssid = ap_ssid + "-" + String(mac[4],HEX) + String(mac[5],HEX);
 	Serial.println("Setting AP " + ssid);
+	WiFi.softAPConfig(softApIp, softApIp, softApNetMask);
 	WiFi.softAP(ssid.c_str());
 	IPAddress IP = WiFi.softAPIP();
   	Serial.print("AP IP address: ");
   	Serial.println(IP);
-  	// Send web page with input fields to client
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send_P(200, "text/html", captive_portal_html, processor);
+	});
+	server.on("/wifi_setup", HTTP_GET, [](AsyncWebServerRequest* request) {
 		request->send_P(200, "text/html", wifi_config_html, processor);
 	});
-	server.on("/config_wifi", HTTP_GET, [] (AsyncWebServerRequest* request) {
+	server.on("/wifi_setup_save", HTTP_GET, [] (AsyncWebServerRequest* request) {
 		String wifi_ssid_param = request->getParam(PARAM_INPUT_1)->value();
 		String wifi_pwd_param = request->getParam(PARAM_INPUT_2)->value();
 		String node_name_param = request->getParam(PARAM_INPUT_7)->value();
@@ -519,6 +538,9 @@ void configSetup() {
 		delay(2000);
 		ESP.restart();
 	});
+	dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+	dnsServer.start(53, "*", IP);
+	server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
 }
 
 bool readWifiPrefs() {
@@ -606,7 +628,11 @@ void setup() {
 }
 
 void loop() {
-	if (isWifiSetUp && isMqttSetUp) {
-		mainLoop();
+	if (isWifiSetUp) {
+		if (isMqttSetUp) {
+			mainLoop();
+		}
+	} else {
+		dnsServer.processNextRequest();
 	}
 }
