@@ -18,12 +18,12 @@ Use [this file](https://github.com/formatBCE/ESP32_BLE_presense/blob/main/partit
 3. Find new WiFi network, named "EspBleScanner-(some numbers and letters)".
 Connect to it from your PC/phone.
 You should receive request to "authenticate" in the network, which will bring initial configuration screen to you.
-If it didn't happen, open your browser and go to http://8.8.8.8 (oor any domain, e.g. "https://google.com" - it will still redirect you).
+If it didn't happen, open your browser and go to http://8.8.8.8 (or any domain, e.g. "https://google.com" - it will still redirect you).
 
 4. Put your WiFi configuration and node name (basically, room name for device). 
 This room name will be shown in Home Assistant sensor value, so pick wisely!
 Use 2.4 GHz WiFi network.
-If configuratioon is incorrect, you will be presented by error screen.
+If configuration is incorrect, you will be presented by error screen.
 Otherwise, local device IP will be shown.
 
 5. Connect to your network. Go to local device IP in your browser, and configure MQTT connection. Save config.
@@ -39,6 +39,6 @@ Otherwise, local device IP will be shown.
 3. If WiFi is connected, but there's no MQTT configuration done, or MQTT server is inaccessible, LED will be blinking once per 2 seconds.
 4. If everything is alright, LED will be constantly flashing. On event of finding any defined beacon, LED will shortly flash off. This way you can make sure, that data are sent to MQTT.
 
-In case if you cannot find device IP address and go to configuratioon page (it may happen, for instance, when your WiFi network is down, or password was changed), you can manually reset device configuration. To do this, rebooot device bu button press or by reconnecting the power 5 times with period of less that 5 seconds. Device will erase configuration and return to Access Point mode.
+In case if you cannot find device IP address and go to configuration page (it may happen, for instance, when your WiFi network is down, or password was changed), you can manually reset device configuration. To do this, rebooot device bu button press or by reconnecting the power 5 times with period of less that 5 seconds. Device will erase configuration and return to Access Point mode.
 
 
