@@ -207,6 +207,9 @@ void sendDeviceState(String device, int rssi) {
 		serializeJson(pld, pld_buffer);
 		if (mqttClient.publish(topic.c_str(), 0, true, pld_buffer, strlen(pld_buffer)) == true) {
 			Serial.println("Sent data for " + device);
+			digitalWrite(LED_BUILTIN, LOW);
+			delay(100);
+			digitalWrite(LED_BUILTIN, HIGH);
 		} else {
 			Serial.print("Error sending device data message.");
 			mqttClient.disconnect();
