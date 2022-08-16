@@ -1,0 +1,38 @@
+esphome:
+  ....
+# ADD THIS - SECTION 1:
+  includes:
+    - ble-node.h
+  libraries:
+    - "h2zero/NimBLE-Arduino"
+# END OF SECTION 1
+
+esp32:
+  ....
+
+logger:
+
+api:
+  ....
+
+ota:
+  ....
+
+wifi:
+  ....
+
+captive_portal:
+
+# ADD THIS - SECTION 2
+mqtt:
+  broker: 192.168.0.1 # TODO replace with your MQTT server IP
+  username: !secret mqtt_user # TODO replace with your MQTT user or remove
+  password: !secret mqtt_password # TODO replace with your MQTT password or remove
+  discovery: true
+
+custom_component:
+- lambda: |-
+    auto my_node = new BleNodeComponent("room_name"); # TODO replace rooom_name with your room name
+    return {my_node};
+# END OF SECTION 2
+    
