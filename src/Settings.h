@@ -1,5 +1,5 @@
 
-#define version "0.0.5"
+#define version "0.0.6"
 String ap_ssid = "EspBleScanner";
 
 #define main_prefs "ble_scan_prefs"
@@ -38,7 +38,7 @@ String sensor_topic  = "sensor/";
 #define scanInterval 1 // Define the interval in seconds between scans
 #define singleScanTime 9 // Define the duration of a single scan in seconds
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
-#define bleScanWindow 0x10 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
+#define bleScanWindow 0x40 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
 #define hardResetTimeoutInterval 5000
 
