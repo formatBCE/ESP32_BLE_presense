@@ -11,8 +11,8 @@ extern "C" {
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
-#define waitTime 1 // Define the interval in seconds between scans
-#define scanTime 9 // Define the duration of a single scan in seconds
+#define waitTime 0 // Define the interval in seconds between scans
+#define scanTime 5 // Define the duration of a single scan in seconds
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x40 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
@@ -106,31 +106,31 @@ class BleNodeComponent : public Component, public CustomMQTTDevice {
         pBLEScan->setAdvertisedDeviceCallbacks(new BleAdvertisedDeviceCallbacks(*this));
         pBLEScan->setInterval(bleScanInterval);
         pBLEScan->setWindow(bleScanWindow);
+        pBLEScan->setActiveScan(false);
         xTaskCreatePinnedToCore(scanForDevices, "BLE Scan", 4096, pBLEScan, 1, &nimBLEScan, 1);
         configTime(0, 0, "pool.ntp.org");
         subscribe("format_ble_tracker/alive/+", &BleNodeComponent::on_alive_message);
     }
 
     void on_alive_message(const std::string &topic, const std::string &payload) {
-        std::string uid = topic.substr(topic.find_last_of("/") + 1);
+        std::string uid = capitalizeString(topic.substr(topic.find_last_of("/") + 1));
         if (payload == "True") {
-            if (uid.find_last_of(":") >= 0) {
+            if (uid.rfind(":") != std::string::npos) {
                 if (std::find(macs.begin(), macs.end(), uid) == macs.end()) {
                     ESP_LOGD("format_ble", ("Adding MAC  " + uid).c_str());
                     macs.push_back(uid);
                 } else {
                     ESP_LOGD("format_ble", ("Skipping duplicated MAC  " + uid).c_str());
                 }
-            } else if (uid.find_last_of("-") >= 0) {
+            } else if (uid.rfind("-") != std::string::npos) {
                 if (std::find(uuids.begin(), uuids.end(), uid) == uuids.end()) {
-                    ESP_LOGD("format_ble", ("Adding UUID" + uid).c_str());
+                    ESP_LOGD("format_ble", ("Adding UUID " + uid).c_str());
                     uuids.push_back(uid);
                 } else {
                     ESP_LOGD("format_ble", ("Skipping duplicated UUID  " + uid).c_str());
                 }
             }
             return;
-            publish("the/other/topic", "Hello World!");
         } else {
             ESP_LOGD("format_ble", ("Removing " + uid).c_str());
             macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
