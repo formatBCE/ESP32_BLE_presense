@@ -12,6 +12,7 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 # Usage
 
 ## [ESPHome](https://esphome.io/) (Recommended)
+### At current stage, newest code and fixes are applied only for this variant. Custom firmware is deprecated.
 
 * TIP 0: ESPHome variant does not create any device configuration or entities, because all configuration/updates goes through ESPHome.
 * TIP 1: If you're updating from custom firmware, you may use ESPHome manual installation option (choose "Legacy" on export step) and update via OTA.
@@ -34,7 +35,7 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 
 That's it, enjoy. If you're here, i believe, you know what to do with ESPHome.
 
-## Custom firmware
+## Custom firmware (deprecated, use ESPHome instead)
 
 1. Get the code from repository, and flash it to ESP32 using PlatformIO or other IDE.
 Or, download only bin file from latest release, and flash using ESP flasher or other flashing tool.
