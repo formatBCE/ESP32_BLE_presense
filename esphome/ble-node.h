@@ -11,26 +11,22 @@ extern "C" {
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
-#define waitTime 0 // Define the interval in seconds between scans
-#define scanTime 5 // Define the duration of a single scan in seconds
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x40 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
-unsigned long lastBleScan = 0;
 NimBLEScan* pBLEScan;
 TaskHandle_t nimBLEScan;
 
 void scanForDevices(void* parameter) {
-        while (1) {
-            if ((millis() - lastBleScan > (waitTime * 1000) || lastBleScan == 0)) {
-                ESP_LOGD("format_ble", "Scanning...\t");
-                pBLEScan->start(scanTime);
-                ESP_LOGD("format_ble", "Scanning done.");
-                pBLEScan->clearResults();
-                lastBleScan = millis();
-            }
+    while (1) {
+        if (!pBLEScan->isScanning()) {
+            ESP_LOGD("format_ble", "Start scanning...");
+            pBLEScan->start(0, nullptr, false);
         }
+        ESP_LOGD("format_ble", "BLE scan heartbeat");
+        delay(5000);
     }
+}
 
 class BleNodeComponent : public Component, public CustomMQTTDevice {
 
@@ -103,10 +99,11 @@ class BleNodeComponent : public Component, public CustomMQTTDevice {
         NimBLEDevice::init("");
         NimBLEDevice::setPower(ESP_PWR_LVL_P9);
         pBLEScan = NimBLEDevice::getScan();
-        pBLEScan->setAdvertisedDeviceCallbacks(new BleAdvertisedDeviceCallbacks(*this));
+        pBLEScan->setAdvertisedDeviceCallbacks(new BleAdvertisedDeviceCallbacks(*this), true);
         pBLEScan->setInterval(bleScanInterval);
         pBLEScan->setWindow(bleScanWindow);
         pBLEScan->setActiveScan(false);
+        pBLEScan->setMaxResults(0);
         xTaskCreatePinnedToCore(scanForDevices, "BLE Scan", 4096, pBLEScan, 1, &nimBLEScan, 1);
         configTime(0, 0, "pool.ntp.org");
         subscribe("format_ble_tracker/alive/+", &BleNodeComponent::on_alive_message);
