@@ -34,5 +34,9 @@ custom_component:
 - lambda: |-
     auto my_node = new BleNodeComponent("room_name"); # TODO replace rooom_name with your room name
     return {my_node};
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
 # END OF SECTION 2
     
