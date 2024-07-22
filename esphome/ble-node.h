@@ -39,7 +39,7 @@ class BleNodeComponent : public Component, public CustomMQTTDevice {
         if (!getLocalTime(&timeinfo)) {
             return(0);
         }
-        time(&now);
+        ::time(&now);
         return now;
     }
 
