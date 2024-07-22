@@ -34,9 +34,17 @@ custom_component:
 - lambda: |-
     auto my_node = new BleNodeComponent("room_name"); # TODO replace rooom_name with your room name
     return {my_node};
+# END OF SECTION 2
 
+# CHECK THIS - SECTION 3
+
+# Some devices may not have a working time service.  This can lead to
+# updates being dropped with "Skipping message with old timestamp" in the logs.
+#
+# The homeassistant_time service as it is the esphome recommended
+# default time service, enable like this:
 time:
   - platform: homeassistant
     id: homeassistant_time
-# END OF SECTION 2
-    
+
+# END OF SECTION 3
