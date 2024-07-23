@@ -88,7 +88,7 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
     std::string mac_address = capitalizeString(macAddress);
     unsigned long time = getTime();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
-        ESP_LOGD("format_ble", "Sending for %s", mac_address.c_str());
+        ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
         publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {
             root["rssi"] = rssi;
             root["timestamp"] = time;
@@ -102,7 +102,7 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
         std::string uuid_str = capitalizeString(NimBLEUUID(reinterpret_cast<const uint8_t*>(&manufacturerData[UUID_INDEX]),
                                                            UUID_LEN, true).toString());
         if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
-            ESP_LOGD("format_ble", "Sending for %s", uuid_str.c_str());
+            ESP_LOGD("format_ble", "Sending for '%s': %ddBm", uuid_str.c_str(), rssi);
             publish_json("format_ble_tracker/" + uuid_str + "/" + name, [=](JsonObject root) {
                 root["rssi"] = rssi;
                 root["timestamp"] = time;
