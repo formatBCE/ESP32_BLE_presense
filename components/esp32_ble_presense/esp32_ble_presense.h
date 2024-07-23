@@ -6,6 +6,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/mqtt/custom_mqtt_device.h"
+#include "esphome/components/time/real_time_clock.h"
 
 namespace ESP32_BLE_Presense {
 
@@ -15,6 +16,8 @@ class ESP32_BLE_Presense : public esphome::PollingComponent,
 
     std::vector<std::string> macs;
     std::vector<std::string> uuids;
+
+    esphome::time::RealTimeClock* rtc = 0;
 
 public:
 
@@ -26,6 +29,10 @@ public:
 
     void set_area(std::string area) {
         name = area;
+    }
+
+    void set_time(esphome::time::RealTimeClock* rtc) {
+        this->rtc = rtc;
     }
 
     ESP32_BLE_Presense(const ESP32_BLE_Presense&) = delete;

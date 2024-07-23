@@ -52,7 +52,7 @@ static std::string capitalizeString(const std::string& s) {
     return ret;
 }
 
-static unsigned long getTime() {
+static time_t getTime() {
     time_t now;
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo)) {
@@ -85,7 +85,8 @@ void ESP32_BLE_Presense::setup() {
     pBLEScan->setWindow(bleScanWindow);
     pBLEScan->setActiveScan(false);
     pBLEScan->setMaxResults(0);
-    configTime(0, 0, "pool.ntp.org");
+    if (!rtc)
+        configTime(0, 0, "pool.ntp.org");
     subscribe("format_ble_tracker/alive/+", &ESP32_BLE_Presense::on_alive_message);
 }
 
@@ -94,7 +95,7 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
                                     const std::string& manufacturerData) {
 
     std::string mac_address = capitalizeString(macAddress);
-    unsigned long time = getTime();
+    time_t time = rtc ? rtc->timestamp_now() : getTime();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
         ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
         publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {

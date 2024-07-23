@@ -50,3 +50,4 @@ mqtt:
 
 esp32_ble_presense:
   area: "Living Room"
+  time_id: homeassistant_time
