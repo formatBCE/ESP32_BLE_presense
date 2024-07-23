@@ -35,11 +35,13 @@ public:
     }
 };
 
-// Copies unneccessarily
-static std::string capitalizeString(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
+static std::string capitalizeString(const std::string& s) {
+    std::string ret;
+    ret.reserve(s.size());
+
+    std::transform(s.begin(), s.end(), std::back_inserter(ret),
                    [](unsigned char c){ return std::toupper(c); });
-    return s;
+    return ret;
 }
 
 static unsigned long getTime() {
