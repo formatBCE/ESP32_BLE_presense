@@ -95,11 +95,12 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
         }, 1, true);
         return;
     }
-    std::string strManufacturerData = manufacturerData;
-    if (strManufacturerData != "") {
-        uint8_t cManufacturerData[100];
-        strManufacturerData.copy((char*)cManufacturerData, strManufacturerData.length(), 0);
-        std::string uuid_str = capitalizeString(NimBLEUUID(cManufacturerData+4, 16, true).toString().c_str());
+
+    static const size_t UUID_INDEX = 4;
+    static const size_t UUID_LEN = 16;
+    if (manufacturerData.length() >= UUID_INDEX + UUID_LEN) {
+        std::string uuid_str = capitalizeString(NimBLEUUID(reinterpret_cast<const uint8_t*>(&manufacturerData[UUID_INDEX]),
+                                                           UUID_LEN, true).toString());
         if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
             ESP_LOGD("format_ble", ("Sending for " + uuid_str).c_str());
             publish_json("format_ble_tracker/" + uuid_str + "/" + name, [=](JsonObject root) {
