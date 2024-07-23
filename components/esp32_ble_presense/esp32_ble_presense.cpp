@@ -12,6 +12,14 @@
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x40 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
+// Undo the default loose definitions in our file only
+#pragma GCC diagnostic error "-Wdeprecated-declarations"
+#pragma GCC diagnostic error "-Wsign-compare"
+#pragma GCC diagnostic error "-Wunused-but-set-variable"
+#pragma GCC diagnostic error "-Wunused-function"
+#pragma GCC diagnostic error "-Wunused-parameter"
+#pragma GCC diagnostic error "-Wunused-variable"
+
 using namespace esphome;
 
 namespace ESP32_BLE_Presense {
