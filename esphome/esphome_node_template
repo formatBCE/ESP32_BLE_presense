@@ -1,50 +1,19 @@
-esphome:
-  ....
-# ADD THIS - SECTION 1:
-  includes:
-    - ble-node.h
-  libraries:
-    - "h2zero/NimBLE-Arduino"
-# END OF SECTION 1
+# Adding external component to build:
+external_components:
+  source: github://formatBCE/ESP32_BLE_presense@main
 
-esp32:
-  ....
+# Initializing it:
+esp32_ble_presense:
+  area: "Living room" # Replace this with your room name
 
-logger:
-
-api:
-  ....
-
-ota:
-  ....
-
-wifi:
-  ....
-
-captive_portal:
-
-# ADD THIS - SECTION 2
+# MQTT config - required for this component to work:
 mqtt:
   broker: 192.168.0.1 # TODO replace with your MQTT server IP
   username: !secret mqtt_user # TODO replace with your MQTT user or remove
   password: !secret mqtt_password # TODO replace with your MQTT password or remove
   discovery: true
 
-custom_component:
-- lambda: |-
-    auto my_node = new BleNodeComponent("room_name"); # TODO replace rooom_name with your room name
-    return {my_node};
-# END OF SECTION 2
-
-# CHECK THIS - SECTION 3
-
-# Some devices may not have a working time service.  This can lead to
-# updates being dropped with "Skipping message with old timestamp" in the logs.
-#
-# The homeassistant_time service as it is the esphome recommended
-# default time service, enable like this:
+# System time config - required for precise timestamps, used in integration:
 time:
   - platform: homeassistant
     id: homeassistant_time
-
-# END OF SECTION 3
