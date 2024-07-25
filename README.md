@@ -5,9 +5,8 @@ Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration ht
 
 0. Please make sure, that you're using high-quality ESP32 device. I had many troubles with some no-name devices. This will guarantee stable connection and scanning, as well as smooth setup/update.
 1. ESP32 device (once more, use good one!)
-2. 2.4 GHz WiFi network
-3. MQTT server
-4. ESPHome
+2. MQTT server
+3. ESPHome
 
 # Usage
 ## TIP: Before this changes, custom header file was used. It's not needed now, you can delete it.
