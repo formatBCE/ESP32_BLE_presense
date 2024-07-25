@@ -1,0 +1,52 @@
+substitutions:
+  name: "project-template"
+
+########################################################################
+# Example platform
+
+esphome:
+  name: "${name}"
+  platformio_options:
+    build_flags:
+      - -Wall
+      - -Wextra
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+    version: recommended
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+
+wifi:
+  ap:
+    {}
+
+captive_portal:
+
+########################################################################
+# This section actually represents the test
+
+# Load ourselves from extrernal
+external_components:
+  - source: ../components
+    components: [ esp32_ble_presense ]
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+mqtt:
+  broker: mqtt.broker
+  username: mqtt_user
+  password: mqtt_pass
+  discovery: true
+
+esp32_ble_presense:
+  area: "Living Room"
