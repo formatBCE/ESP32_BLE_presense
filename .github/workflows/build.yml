@@ -27,6 +27,14 @@ jobs:
       - name: Install esphome
         run: pip install -r test/requirements-dev.txt
 
+      - uses: actions/cache@v3
+        id: esphome-cache # use this to check for `cache-hit` ==> if: steps.esphome-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            test/.esphome/**
+            $HOME/.platformio/**
+          key: ${{ matrix.os }}-${{matrix.python}}-esphome
+
       - name: Check config
         run: esphome config test/*.yml
 
