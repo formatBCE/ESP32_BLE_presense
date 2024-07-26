@@ -40,3 +40,9 @@ jobs:
 
       - name: Build
         run: esphome compile test/*.yml
+
+      - name: Build - no logs
+        run: esphome -s log_level none compile test/*.yml
+
+      - name: Build - full logs
+        run: esphome -s log_level very_verbose compile test/*.yml
