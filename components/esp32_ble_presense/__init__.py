@@ -22,7 +22,7 @@ ESP32_BLE_Presense = ESP32_BLE_Presense_ns.class_(
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(ESP32_BLE_Presense),
     cv.Required(CONF_AREA): cv.string,
-    cv.Optional(CONF_TIME_ID): cv.use_id(time.RealTimeClock),
+    cv.Required(CONF_TIME_ID): cv.use_id(time.RealTimeClock),
 }).extend(cv.COMPONENT_SCHEMA)
 
 async def to_code(config):

@@ -6,7 +6,6 @@
 
 #include "esphome/core/log.h"
 
-#include <Arduino.h>
 #include <NimBLEDevice.h>
 
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
@@ -19,6 +18,7 @@
 #pragma GCC diagnostic error "-Wunused-function"
 #pragma GCC diagnostic error "-Wunused-parameter"
 #pragma GCC diagnostic error "-Wunused-variable"
+#pragma GCC diagnostic error "-Wformat"
 
 using namespace esphome;
 
@@ -52,16 +52,6 @@ static std::string capitalizeString(const std::string& s) {
     return ret;
 }
 
-static time_t getTime() {
-    time_t now;
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
-        return(0);
-    }
-    ::time(&now);
-    return now;
-}
-
 ESP32_BLE_Presense::ESP32_BLE_Presense()
 :  esphome::PollingComponent(5000) {
 }
@@ -85,8 +75,6 @@ void ESP32_BLE_Presense::setup() {
     pBLEScan->setWindow(bleScanWindow);
     pBLEScan->setActiveScan(false);
     pBLEScan->setMaxResults(0);
-    if (!rtc)
-        configTime(0, 0, "pool.ntp.org");
     subscribe("format_ble_tracker/alive/+", &ESP32_BLE_Presense::on_alive_message);
 }
 
@@ -95,7 +83,7 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
                                     const std::string& manufacturerData) {
 
     std::string mac_address = capitalizeString(macAddress);
-    time_t time = rtc ? rtc->timestamp_now() : getTime();
+    time_t time = rtc->timestamp_now();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
         ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
         publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {
