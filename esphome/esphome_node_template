@@ -2,9 +2,15 @@
 external_components:
   source: github://formatBCE/ESP32_BLE_presense@main
 
+# System time config - required for precise timestamps, used in integration:
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
 # Initializing it:
 esp32_ble_presense:
   area: "Living room" # Replace this with your room name
+  time_id: homeassistant_time
 
 # MQTT config - required for this component to work:
 mqtt:
@@ -12,8 +18,3 @@ mqtt:
   username: !secret mqtt_user # TODO replace with your MQTT user or remove
   password: !secret mqtt_password # TODO replace with your MQTT password or remove
   discovery: true
-
-# System time config - required for precise timestamps, used in integration:
-time:
-  - platform: homeassistant
-    id: homeassistant_time
