@@ -6,11 +6,19 @@
 
 #include "esphome/core/log.h"
 
-#include <Arduino.h>
 #include <NimBLEDevice.h>
 
 #define bleScanInterval 0x80 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 #define bleScanWindow 0x40 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
+
+// Undo the default loose definitions in our file only
+#pragma GCC diagnostic error "-Wdeprecated-declarations"
+#pragma GCC diagnostic error "-Wsign-compare"
+#pragma GCC diagnostic error "-Wunused-but-set-variable"
+#pragma GCC diagnostic error "-Wunused-function"
+#pragma GCC diagnostic error "-Wunused-parameter"
+#pragma GCC diagnostic error "-Wunused-variable"
+#pragma GCC diagnostic error "-Wformat"
 
 using namespace esphome;
 
@@ -35,21 +43,13 @@ public:
     }
 };
 
-// Copies unneccessarily
-static std::string capitalizeString(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return std::toupper(c); });
-    return s;
-}
+static std::string capitalizeString(const std::string& s) {
+    std::string ret;
+    ret.reserve(s.size());
 
-static unsigned long getTime() {
-    time_t now;
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
-        return(0);
-    }
-    ::time(&now);
-    return now;
+    std::transform(s.begin(), s.end(), std::back_inserter(ret),
+                   [](unsigned char c){ return std::toupper(c); });
+    return ret;
 }
 
 ESP32_BLE_Presense::ESP32_BLE_Presense()
@@ -75,7 +75,6 @@ void ESP32_BLE_Presense::setup() {
     pBLEScan->setWindow(bleScanWindow);
     pBLEScan->setActiveScan(false);
     pBLEScan->setMaxResults(0);
-    configTime(0, 0, "pool.ntp.org");
     subscribe("format_ble_tracker/alive/+", &ESP32_BLE_Presense::on_alive_message);
 }
 
@@ -84,22 +83,23 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
                                     const std::string& manufacturerData) {
 
     std::string mac_address = capitalizeString(macAddress);
-    unsigned long time = getTime();
+    time_t time = rtc->timestamp_now();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
-        ESP_LOGD("format_ble", ("Sending for " + mac_address).c_str());
+        ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
         publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {
             root["rssi"] = rssi;
             root["timestamp"] = time;
         }, 1, true);
         return;
     }
-    std::string strManufacturerData = manufacturerData;
-    if (strManufacturerData != "") {
-        uint8_t cManufacturerData[100];
-        strManufacturerData.copy((char*)cManufacturerData, strManufacturerData.length(), 0);
-        std::string uuid_str = capitalizeString(NimBLEUUID(cManufacturerData+4, 16, true).toString().c_str());
+
+    static const size_t UUID_INDEX = 4;
+    static const size_t UUID_LEN = 16;
+    if (manufacturerData.length() >= UUID_INDEX + UUID_LEN) {
+        std::string uuid_str = capitalizeString(NimBLEUUID(reinterpret_cast<const uint8_t*>(&manufacturerData[UUID_INDEX]),
+                                                           UUID_LEN, true).toString());
         if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
-            ESP_LOGD("format_ble", ("Sending for " + uuid_str).c_str());
+            ESP_LOGD("format_ble", "Sending for '%s': %ddBm", uuid_str.c_str(), rssi);
             publish_json("format_ble_tracker/" + uuid_str + "/" + name, [=](JsonObject root) {
                 root["rssi"] = rssi;
                 root["timestamp"] = time;
@@ -115,22 +115,22 @@ void ESP32_BLE_Presense::on_alive_message(const std::string &topic, const std::s
     if (payload == "True") {
         if (uid.rfind(":") != std::string::npos) {
             if (std::find(macs.begin(), macs.end(), uid) == macs.end()) {
-                ESP_LOGD("format_ble", ("Adding MAC  " + uid).c_str());
+                ESP_LOGD("format_ble", "Adding MAC  %s", uid.c_str());
                 macs.push_back(uid);
             } else {
-                ESP_LOGD("format_ble", ("Skipping duplicated MAC  " + uid).c_str());
+                ESP_LOGD("format_ble", "Skipping duplicated MAC  %s", uid.c_str());
             }
         } else if (uid.rfind("-") != std::string::npos) {
             if (std::find(uuids.begin(), uuids.end(), uid) == uuids.end()) {
-                ESP_LOGD("format_ble", ("Adding UUID " + uid).c_str());
+                ESP_LOGD("format_ble", "Adding UUID %s", uid.c_str());
                 uuids.push_back(uid);
             } else {
-                ESP_LOGD("format_ble", ("Skipping duplicated UUID  " + uid).c_str());
+                ESP_LOGD("format_ble", "Skipping duplicated UUID  %s", + uid.c_str());
             }
         }
         return;
     } else {
-        ESP_LOGD("format_ble", ("Removing " + uid).c_str());
+        ESP_LOGD("format_ble", "Removing %s", uid.c_str());
         macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
         uuids.erase(std::remove(uuids.begin(), uuids.end(), uid), uuids.end());
     }
