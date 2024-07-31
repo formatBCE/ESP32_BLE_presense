@@ -36,10 +36,10 @@ public:
         this->rtc = rtc;
     }
 
+    Trigger<std::string, int, uint32_t> *on_update() const { return this->on_update_trigger_; }
+
     ESP32_BLE_Presense(const ESP32_BLE_Presense&) = delete;
     ESP32_BLE_Presense& operator=(const ESP32_BLE_Presense&) = delete;
-
-    Trigger<std::string, int, uint32_t> *on_update() const { return this->on_update_trigger_; }
 
 protected:
     Trigger<std::string, int, uint32_t> *on_update_trigger_ = new Trigger<std::string, int, uint32_t>();
