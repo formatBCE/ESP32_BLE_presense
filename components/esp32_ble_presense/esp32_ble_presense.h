@@ -44,8 +44,6 @@ public:
 protected:
     Trigger<std::string, int, uint32_t> *on_update_trigger_ = new Trigger<std::string, int, uint32_t>();
 
-private:
-
     friend class BleAdvertisedDeviceCallbacks;
     void reportDevice(const std::string& mac_address,
                       int rssi,
