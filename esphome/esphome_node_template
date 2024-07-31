@@ -1,6 +1,6 @@
 # Adding external component to build:
 external_components:
-  source: github://formatBCE/ESP32_BLE_presense@main
+  source: github://formatBCE/ESP32_BLE_presense@dev-v2
 
 # System time config - required for precise timestamps, used in integration:
 time:
