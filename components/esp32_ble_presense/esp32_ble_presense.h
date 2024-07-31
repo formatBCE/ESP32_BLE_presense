@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/components/mqtt/custom_mqtt_device.h"
 #include "esphome/components/time/real_time_clock.h"
@@ -37,6 +38,11 @@ public:
 
     ESP32_BLE_Presense(const ESP32_BLE_Presense&) = delete;
     ESP32_BLE_Presense& operator=(const ESP32_BLE_Presense&) = delete;
+
+    Trigger<std::string, int, uint32_t> *on_update() const { return this->on_update_; }
+
+protected:
+    Trigger<std::string, int, uint32_t> *on_update_trigger_ = new Trigger<std::string, int, uint32_t>();
 
 private:
 

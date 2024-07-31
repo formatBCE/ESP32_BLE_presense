@@ -90,6 +90,7 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
             root["rssi"] = rssi;
             root["timestamp"] = time;
         }, 1, true);
+        this->on_update_trigger_->trigger(mac_address, rssi, time);
         return;
     }
 
