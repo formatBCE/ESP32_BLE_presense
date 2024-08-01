@@ -45,5 +45,5 @@ async def to_code(config):
         cg.add(var.set_time(time_))
 
     await automation.build_automation(
-            var.on_update(), [(cg.std_string, "id"), (cg.int32_t, "rssi"), (cg.uint32_t, "timestamp")], config[CONF_ON_UPDATE]
+            var.on_update(), [(cg.std_string, "id"), (cg.int8, "rssi"), (cg.uint32, "timestamp")], config[CONF_ON_UPDATE]
         )
