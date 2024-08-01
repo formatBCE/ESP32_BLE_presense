@@ -20,9 +20,8 @@
 #pragma GCC diagnostic error "-Wunused-variable"
 #pragma GCC diagnostic error "-Wformat"
 
-using namespace esphome;
-
-namespace ESP32_BLE_Presense {
+namespace esphome {
+namespace esp32_ble_presense {
 
 NimBLEScan* pBLEScan;
 
@@ -138,4 +137,5 @@ void ESP32_BLE_Presense::on_alive_message(const std::string &topic, const std::s
     }
 }
 
-}
+} // namespace esp32_ble_presense
+} // namespace esphome
