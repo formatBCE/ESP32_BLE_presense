@@ -61,6 +61,7 @@ void ESP32_BLE_Presense::update() {
         pBLEScan->start(0, nullptr, false);
     }
     ESP_LOGD("format_ble", "BLE scan heartbeat");
+    this->on_heartbeat_trigger_->trigger();
 }
 
 void ESP32_BLE_Presense::setup() {
@@ -74,7 +75,6 @@ void ESP32_BLE_Presense::setup() {
     pBLEScan->setWindow(bleScanWindow);
     pBLEScan->setActiveScan(false);
     pBLEScan->setMaxResults(0);
-    subscribe("format_ble_tracker/alive/+", &ESP32_BLE_Presense::on_alive_message);
 }
 
 void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
@@ -82,14 +82,9 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
                                     const std::string& manufacturerData) {
 
     std::string mac_address = capitalizeString(macAddress);
-    time_t time = rtc->timestamp_now();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
         ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
-        publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {
-            root["rssi"] = rssi;
-            root["timestamp"] = time;
-        }, 1, true);
-        this->on_update_trigger_->trigger(mac_address, rssi, time);
+        this->on_update_trigger_->trigger(mac_address, rssi);
         return;
     }
 
@@ -100,41 +95,34 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
                                                            UUID_LEN, true).toString());
         if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
             ESP_LOGD("format_ble", "Sending for '%s': %ddBm", uuid_str.c_str(), rssi);
-            publish_json("format_ble_tracker/" + uuid_str + "/" + name, [=](JsonObject root) {
-                root["rssi"] = rssi;
-                root["timestamp"] = time;
-            }, 1, true);
-            this->on_update_trigger_->trigger(uuid_str, rssi, time);
+            this->on_update_trigger_->trigger(uuid_str, rssi);
             return;
         }
     }
 }
 
-
-void ESP32_BLE_Presense::on_alive_message(const std::string &topic, const std::string &payload) {
-    std::string uid = capitalizeString(topic.substr(topic.find_last_of("/") + 1));
-    if (payload == "True") {
-        if (uid.rfind(":") != std::string::npos) {
-            if (std::find(macs.begin(), macs.end(), uid) == macs.end()) {
-                ESP_LOGD("format_ble", "Adding MAC  %s", uid.c_str());
-                macs.push_back(uid);
-            } else {
-                ESP_LOGD("format_ble", "Skipping duplicated MAC  %s", uid.c_str());
-            }
-        } else if (uid.rfind("-") != std::string::npos) {
-            if (std::find(uuids.begin(), uuids.end(), uid) == uuids.end()) {
-                ESP_LOGD("format_ble", "Adding UUID %s", uid.c_str());
-                uuids.push_back(uid);
-            } else {
-                ESP_LOGD("format_ble", "Skipping duplicated UUID  %s", + uid.c_str());
-            }
+void ESP32_BLE_Presense::add_beacon(const std::string& uid) {
+    if (uid.rfind(":") != std::string::npos) {
+        if (std::find(macs.begin(), macs.end(), uid) == macs.end()) {
+            ESP_LOGD("format_ble", "Adding MAC  %s", uid.c_str());
+            macs.push_back(uid);
+        } else {
+            ESP_LOGD("format_ble", "Skipping duplicated MAC  %s", uid.c_str());
         }
-        return;
-    } else {
-        ESP_LOGD("format_ble", "Removing %s", uid.c_str());
-        macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
-        uuids.erase(std::remove(uuids.begin(), uuids.end(), uid), uuids.end());
+    } else if (uid.rfind("-") != std::string::npos) {
+        if (std::find(uuids.begin(), uuids.end(), uid) == uuids.end()) {
+            ESP_LOGD("format_ble", "Adding UUID %s", uid.c_str());
+            uuids.push_back(uid);
+        } else {
+            ESP_LOGD("format_ble", "Skipping duplicated UUID  %s", + uid.c_str());
+        }
     }
+}
+
+void ESP32_BLE_Presense::remove_beacon(const std::string& uid) {
+    ESP_LOGD("format_ble", "Removing %s", uid.c_str());
+    macs.erase(std::remove(macs.begin(), macs.end(), uid), macs.end());
+    uuids.erase(std::remove(uuids.begin(), uuids.end(), uid), uuids.end());
 }
 
 } // namespace esp32_ble_presense

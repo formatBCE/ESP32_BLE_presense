@@ -6,20 +6,16 @@
 
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
-#include "esphome/components/mqtt/custom_mqtt_device.h"
-#include "esphome/components/time/real_time_clock.h"
 
 namespace esphome {
 namespace esp32_ble_presense {
 
-class ESP32_BLE_Presense : public esphome::PollingComponent,
-                         public esphome::mqtt::CustomMQTTDevice {
+class ESP32_BLE_Presense : public esphome::PollingComponent {
+
     std::string name;
 
     std::vector<std::string> macs;
     std::vector<std::string> uuids;
-
-    esphome::time::RealTimeClock* rtc = 0;
 
 public:
 
@@ -29,21 +25,18 @@ public:
     void update() override;
     void setup() override;
 
-    void set_area(std::string area) {
-        name = area;
-    }
+    void add_beacon(const std::string& uid);
+    void remove_beacon(const std::string& uid);
 
-    void set_time(esphome::time::RealTimeClock* rtc) {
-        this->rtc = rtc;
-    }
-
-    Trigger<std::string, int32_t, uint32_t> *on_update() const { return this->on_update_trigger_; }
+    Trigger<> *on_heartbeat() const { return this->on_heartbeat_trigger_; }
+    Trigger<std::string, int32_t> *on_update() const { return this->on_update_trigger_; }
 
     ESP32_BLE_Presense(const ESP32_BLE_Presense&) = delete;
     ESP32_BLE_Presense& operator=(const ESP32_BLE_Presense&) = delete;
 
 protected:
-    Trigger<std::string, int32_t, uint32_t> *on_update_trigger_ = new Trigger<std::string, int32_t, uint32_t>();
+    Trigger<> *on_heartbeat_trigger_ = new Trigger<>();
+    Trigger<std::string, int32_t> *on_update_trigger_ = new Trigger<std::string, int32_t>();
 
     friend class BleAdvertisedDeviceCallbacks;
     void reportDevice(const std::string& mac_address,
