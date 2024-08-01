@@ -16,7 +16,7 @@ from esphome.const import (
 
 CODEOWNERS = ["@formatBCE"]
 
-ESP32_BLE_Presense_ns = cg.esphome_ns.namespace("ESP32_BLE_Presense")
+ESP32_BLE_Presense_ns = cg.esphome_ns.namespace("esp32_ble_presense")
 ESP32_BLE_Presense = ESP32_BLE_Presense_ns.class_(
     "ESP32_BLE_Presense",
     cg.PollingComponent,
