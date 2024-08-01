@@ -9,7 +9,8 @@
 #include "esphome/components/mqtt/custom_mqtt_device.h"
 #include "esphome/components/time/real_time_clock.h"
 
-namespace ESP32_BLE_Presense {
+namespace esphome {
+namespace esp32_ble_presense {
 
 class ESP32_BLE_Presense : public esphome::PollingComponent,
                          public esphome::mqtt::CustomMQTTDevice {
@@ -51,4 +52,5 @@ protected:
     void on_alive_message(const std::string &topic, const std::string &payload);
 };
 
-};
+} // namespace esp32_ble_presense
+} // namespace esphome
