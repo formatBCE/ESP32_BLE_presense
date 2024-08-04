@@ -41,6 +41,8 @@ public:
 private:
 
     friend class BleAdvertisedDeviceCallbacks;
+    // NSB
+    void reportDevice2(const std::string& mac_address,int rssi,const std::string& strManufacturerData);
     void reportDevice(const std::string& mac_address,
                       int rssi,
                       const std::string& strManufacturerData);

@@ -37,7 +37,8 @@ public:
         if (!device)
             return;
 
-        parent_.reportDevice(device->getAddress().toString(),
+        // NSB
+        parent_.reportDevice2(device->getAddress().toString(),
                              device->getRSSI(),
                              device->getManufacturerData());
     }
@@ -78,11 +79,9 @@ void ESP32_BLE_Presense::setup() {
     subscribe("format_ble_tracker/alive/+", &ESP32_BLE_Presense::on_alive_message);
 }
 
-void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
-                                    int rssi,
-                                    const std::string& manufacturerData) {
-
-    std::string mac_address = capitalizeString(macAddress);
+void ESP32_BLE_Presense::reportDevice2(const std::string& macAddress, int rssi, const std::string& manufacturerData) 
+{
+    std::string mac_address = "n13ldo-foo";//capitalizeString(macAddress);
     time_t time = rtc->timestamp_now();
     if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
         ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
@@ -109,6 +108,34 @@ void ESP32_BLE_Presense::reportDevice(const std::string& macAddress,
     }
 }
 
+void ESP32_BLE_Presense::reportDevice(const std::string& macAddress, int rssi, const std::string& manufacturerData) 
+{
+    std::string mac_address = capitalizeString(macAddress);
+    time_t time = rtc->timestamp_now();
+    if (std::find(macs.begin(), macs.end(), mac_address) != macs.end()) {
+        ESP_LOGD("format_ble", "Sending for '%s': %ddBm", mac_address.c_str(), rssi);
+        publish_json("format_ble_tracker/" + mac_address + "/" + name, [=](JsonObject root) {
+            root["rssi"] = rssi;
+            root["timestamp"] = time;
+        }, 1, true);
+        return;
+    }
+
+    static const size_t UUID_INDEX = 4;
+    static const size_t UUID_LEN = 16;
+    if (manufacturerData.length() >= UUID_INDEX + UUID_LEN) {
+        std::string uuid_str = capitalizeString(NimBLEUUID(reinterpret_cast<const uint8_t*>(&manufacturerData[UUID_INDEX]),
+                                                           UUID_LEN, true).toString());
+        if (std::find(uuids.begin(), uuids.end(), uuid_str) != uuids.end()) {
+            ESP_LOGD("format_ble", "Sending for '%s': %ddBm", uuid_str.c_str(), rssi);
+            publish_json("format_ble_tracker/" + uuid_str + "/" + name, [=](JsonObject root) {
+                root["rssi"] = rssi;
+                root["timestamp"] = time;
+            }, 1, true);
+            return;
+        }
+    }
+}
 
 void ESP32_BLE_Presense::on_alive_message(const std::string &topic, const std::string &payload) {
     std::string uid = capitalizeString(topic.substr(topic.find_last_of("/") + 1));
