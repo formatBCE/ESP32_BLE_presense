@@ -1,3 +1,5 @@
+# _DEPRECATED_ Use [Bermuda Trilateration](https://github.com/agittins/bermuda) instead
+
 # ESP32_BLE_presense
 Tracker node ESP32 firmware for Home Assistant Format BLE Tracker integration https://github.com/formatBCE/Format-BLE-Tracker.
 
